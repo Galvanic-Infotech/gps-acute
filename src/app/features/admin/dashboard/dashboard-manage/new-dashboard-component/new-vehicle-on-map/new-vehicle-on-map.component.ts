@@ -55,8 +55,8 @@ export class NewVehicleOnMapComponent {
     private router: Router,
     private renderer: Renderer2,
     private datePipe:DatePipe,
-    
-  ) { 
+
+  ) {
     this.router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       takeUntil(this.unsubscribeRouteChange$)
@@ -90,9 +90,9 @@ export class NewVehicleOnMapComponent {
         position: google.maps.ControlPosition.RIGHT_BOTTOM
       }
     };
-  
+
     this.map = new google.maps.Map(document.getElementById('new-map') as HTMLDivElement, mapOptions);
-  
+
     const marker = new google.maps.Marker({
       position: { lat: lat, lng: long },
       map: this.map,
@@ -106,18 +106,18 @@ export class NewVehicleOnMapComponent {
 
   selectCustomer(customer: any) {
     if(!customer?.selectcus) {
-      this.subscription?.unsubscribe();  
+      this.subscription?.unsubscribe();
     }
     this.selectType = customer?.customer?.type;
-    
-    if(this.selectType) {      
+
+    if(this.selectType) {
       if (this.marker) {
         this.marker.forEach((marker: any) => {
           marker.setMap(null);
         });
         this.marker = [];
       }
-  
+
       const marker = new google.maps.Marker({
         position: { lat: this.lat, lng: this.lng },
         map: this.map,
@@ -139,7 +139,7 @@ export class NewVehicleOnMapComponent {
     this.vehicleData = [];
     this.data =[];
     this.vehicleDatacount = []
-    this.selectedCustomer = customer?.customer?.selectcus; 
+    this.selectedCustomer = customer?.customer?.selectcus;
     if (this.selectedCustomer) {
       this.storageService.setItem('status','All' )
       this.getVehicleData(this.selectedCustomer);
@@ -162,7 +162,7 @@ export class NewVehicleOnMapComponent {
   getVehicleData(id: any) {
     this.swiperData = [];
     this.spinnerLoading = true;
-    this.subscription?.unsubscribe();  
+    this.subscription?.unsubscribe();
     this.unsubscribe$ = new Subject();
 
     this.subscription = timer(0, 10000).pipe(
@@ -179,7 +179,7 @@ export class NewVehicleOnMapComponent {
         this.spinnerLoading = false;
         this.data = res?.body?.Result?.Data || [];
         this.vehicleDatacount = res?.body?.Result?.Data || [];
-        this.sendFilteredData();        
+        this.sendFilteredData();
       }),
       switchMap(() => this.storageService.getItem('status')),
       tap((status: any) => {
@@ -194,7 +194,7 @@ export class NewVehicleOnMapComponent {
         this.spinnerLoading = false;
       }
     );
-    
+
     // Set the flag to detect page refresh on page load
     localStorage.setItem('isPageRefreshed', 'true');
   }
@@ -209,10 +209,10 @@ export class NewVehicleOnMapComponent {
       });
     } else if (this.selectedStatus === 'Never Connected' || this.selectedStatus === 'No Conn.') {
       this.vehicleData = data.filter((res: any) => {
-        if (res?.Status != 0) return false;
-        if (!res?.StatusDuration) return true;
-        const parts = res.StatusDuration.split(' ');
-        return parts[0] === 'Never';
+        // if (res?.Status != 0) return false;
+        // if (!res?.StatusDuration) return true;
+        // const parts = res.StatusDuration.split(' ');
+        return res.position.status == "Never Connected";
       });
     } else if (this.selectedStatus === 'Running') {
       this.vehicleData = data.filter(
@@ -227,7 +227,7 @@ export class NewVehicleOnMapComponent {
         (res: any) => res?.Status == 1 && res?.SubStatus == 3
       );
     } else if (this.selectedStatus === 'Expired Soon') {
-      this.vehicleData = data.filter((res: any) =>  res?.isexpiredsoon === 1);      
+      this.vehicleData = data.filter((res: any) =>  res?.isexpiredsoon === 1);
     } else if (this.selectedStatus === 'Expired') {
       this.vehicleData = data.filter((res: any) => res?.isexpired === 1);
     }  else if (
@@ -246,7 +246,7 @@ export class NewVehicleOnMapComponent {
     this.unsubscribe$.next();
   }
 
-  plotVehicleonMap() {    
+  plotVehicleonMap() {
     if (this.liveData) {
       return;
     }
@@ -256,7 +256,7 @@ export class NewVehicleOnMapComponent {
       switchMap((vehicle: any, index: number) => {
         if (!vehicle?.Eventdata || (!vehicle?.Eventdata?.Latitude && !vehicle?.Eventdata?.Longitude)) {
           return EMPTY;
-        }        
+        }
         const existingMarkerIndex = this.findExistingMarkerIndex(vehicle.Device.VehicleNo);
         const canvas = document.createElement('canvas');
         const context: any = canvas.getContext('2d');
@@ -310,13 +310,13 @@ export class NewVehicleOnMapComponent {
             this.markers[existingMarkerIndex].setIcon(icon);
             this.markers[existingMarkerIndex].setPosition(newPosition);
             if (
-              !vehicle || 
-              !vehicle?.StatusDuration || 
-              vehicle?.StatusDuration == null || 
+              !vehicle ||
+              !vehicle?.StatusDuration ||
+              vehicle?.StatusDuration == null ||
               !vehicle?.Eventdata || (!vehicle?.Eventdata?.Latitude && !vehicle?.Eventdata?.Longitude) ||
-              (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 0) || 
-              (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 1) || 
-              (vehicle?.ResultCode == 4 && vehicle?.PointValidity?.CurrentPointType == 0) || 
+              (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 0) ||
+              (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 1) ||
+              (vehicle?.ResultCode == 4 && vehicle?.PointValidity?.CurrentPointType == 0) ||
               (vehicle?.ResultCode == 4 && vehicle?.PointValidity?.CurrentPointType == 1)
             ) return;
             const parts = vehicle.StatusDuration.split(' ');
@@ -343,7 +343,7 @@ export class NewVehicleOnMapComponent {
                 infoWindow.setContent(initialContent);
                 this.getdayDistanceInfo(vehicle?.Device?.Id)
                 .then(dayDistance => {
-                  this.dayDistanceValue = dayDistance                  
+                  this.dayDistanceValue = dayDistance
                 })
                 this.getLiveAddressLocation(address)
                   .pipe(
@@ -568,7 +568,7 @@ export class NewVehicleOnMapComponent {
     index: number,
     icon: any,
     infoWindow: google.maps.InfoWindow
-  ) { 
+  ) {
     const newPosition = new google.maps.LatLng(
       vehicle?.Eventdata?.Latitude,
       vehicle?.Eventdata?.Longitude
@@ -585,17 +585,17 @@ export class NewVehicleOnMapComponent {
       optimized: true,
     });
 
-    marker.addListener('click', () => {  
+    marker.addListener('click', () => {
       this.closeAllInfoWindows();
-   
+
       if (
-        !vehicle || 
-        !vehicle?.StatusDuration || 
-        vehicle?.StatusDuration == null || 
+        !vehicle ||
+        !vehicle?.StatusDuration ||
+        vehicle?.StatusDuration == null ||
         !vehicle?.Eventdata || (!vehicle?.Eventdata?.Latitude && !vehicle?.Eventdata?.Longitude) ||
-        (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 0) || 
-        (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 1) || 
-        (vehicle?.ResultCode == 4 && vehicle?.PointValidity?.CurrentPointType == 0) || 
+        (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 0) ||
+        (vehicle?.ResultCode == 3 && vehicle?.PointValidity?.CurrentPointType == 1) ||
+        (vehicle?.ResultCode == 4 && vehicle?.PointValidity?.CurrentPointType == 0) ||
         (vehicle?.ResultCode == 4 && vehicle?.PointValidity?.CurrentPointType == 1)
       ) return;
       const parts = vehicle.StatusDuration.split(' ');
@@ -721,11 +721,11 @@ export class NewVehicleOnMapComponent {
   //               <span><strong>Status:</strong> ${this.checkStauts(
   //       vehicle
   //     )}</span>
-  //             </div> 
+  //             </div>
   //              <div class="col-md-5">
   //               <span ><strong>Speed: </strong>${vehicle?.Eventdata && vehicle?.Eventdata?.Speed ? vehicle?.Eventdata?.Speed : 0
   //     } Km/H</span>
-  //             </div>             
+  //             </div>
   //           </div>
   //           <div class="row mb-2">
   //             <div class="col-md-7">
@@ -737,7 +737,7 @@ export class NewVehicleOnMapComponent {
   //     } Km</span>
   //             </div>
   //           </div>
-           
+
   //           <div class="row mb-2">
   //             <div class="col-md-12 location-part">
   //               <span style="color: black" class="label"><strong>Address:</strong> ${processedAddress}</span>
@@ -752,7 +752,7 @@ export class NewVehicleOnMapComponent {
   //       'fa-thermometer-empty',
   //       'Temperature',
   //       vehicle?.Peripherial?.Temp
-  //     )}         
+  //     )}
   //        ${generateIcon(
   //       'fa-key',
   //       'Ignition',
@@ -777,7 +777,7 @@ export class NewVehicleOnMapComponent {
   //       </div>
   //     </div>`;
   // }
-  
+
 
   generateInfoWindowContent(vehicle: any, address: string) {
     const truncateLongWords = (text: string, maxLength: number) => {
@@ -837,11 +837,11 @@ export class NewVehicleOnMapComponent {
                 <span><strong>Status:</strong> ${this.checkStauts(
         vehicle
       )}</span>
-              </div> 
+              </div>
                <div class="col-md-4">
                 <span ><strong>Speed: </strong>${vehicle?.Eventdata && vehicle?.Eventdata?.Speed ? vehicle?.Eventdata?.Speed : 0
       } Km/H</span>
-              </div>             
+              </div>
             </div>
             <div class="row mb-2">
               <div class="col-md-8">
@@ -853,7 +853,7 @@ export class NewVehicleOnMapComponent {
       } Km</span>
               </div>
             </div>
-           
+
             <div class="row mb-2">
               <div class="col-md-12 location-part">
                 <span style="color: black" class="label"><strong>Address:</strong> ${processedAddress}</span>
@@ -868,14 +868,14 @@ export class NewVehicleOnMapComponent {
         'fa-thermometer-empty',
         'Temperature',
         vehicle?.Peripherial?.Temp
-      )}         
-         
+      )}
+
             ${generateIcon(
         'fa-location-dot',
         'GPS',
         vehicle?.Eventdata?.GpsStatus
       )}
-          
+
             ${vehicle?.Battery?.status
         ? `<li><a><i class="fa fa-battery-full" style="color:${vehicle.Battery.color} !important"></i><br/><span class="live-value" style="color:black !important">${vehicle.Battery.status}</span></a></li>`
         : ''
@@ -918,7 +918,7 @@ export class NewVehicleOnMapComponent {
     }
   }
 
-  sendFilteredData() {    
+  sendFilteredData() {
     if (!this.confirmedVehicleId) return;
      this.unsubscribe();
     if (this.confirmedVehicleId) {
@@ -927,7 +927,7 @@ export class NewVehicleOnMapComponent {
           return;
         }
         if (vehicle) {
-          if (vehicle?.Device?.Id === this.confirmedVehicleId) {            
+          if (vehicle?.Device?.Id === this.confirmedVehicleId) {
             const latestLatLng = new google.maps.LatLng(vehicle?.Eventdata?.Latitude, vehicle?.Eventdata?.Longitude);
             this.map.setCenter(latestLatLng);
             this.map.setZoom(17);
@@ -949,7 +949,7 @@ export class NewVehicleOnMapComponent {
     }
   }
 
-  updateMarker(latestLatLng: google.maps.LatLng, data: any, prevLatLng?: google.maps.LatLng) {    
+  updateMarker(latestLatLng: google.maps.LatLng, data: any, prevLatLng?: google.maps.LatLng) {
     let heading = 0;
     if (prevLatLng) {
       heading = data?.Eventdata?.Heading
@@ -1002,7 +1002,7 @@ export class NewVehicleOnMapComponent {
           position: latestLatLng,
           map: this.map,
           icon: icon,
-          label: label 
+          label: label
         });
         newMarker.infoWindowOpen = true;
         this.openInfo(newMarker, data);
@@ -1042,7 +1042,7 @@ export class NewVehicleOnMapComponent {
   latestLng = null;
   livesubscription: any;
 
-  openInfo(marker: google.maps.Marker | any, data: any) {    
+  openInfo(marker: google.maps.Marker | any, data: any) {
     const address = {
       Lat: data.Eventdata?.Latitude,
       Lng: data.Eventdata?.Longitude,
@@ -1063,7 +1063,7 @@ export class NewVehicleOnMapComponent {
           </div>
         </div>
         <div class="row mb-2">
-         
+
           <div class="col-md-8">
             <span><strong>Status:</strong> ${this.checkStauts(data)}</span>
           </div>
@@ -1096,13 +1096,13 @@ export class NewVehicleOnMapComponent {
         'Temperature',
         data?.Peripherial?.Temp
       )}
-      
+
             ${generateIcon(
         'fa-location-dot',
         'GPS',
         data?.Eventdata?.GpsStatus
       )}
-            
+
             ${data?.Battery?.status
         ? `<li><a><i class="fa fa-battery-full" style="color:${data.Battery.color} !important"></i><br/><span class="live-value" style="color:black !important">${data.Battery.status}</span></a></li>`
         : ''
@@ -1221,7 +1221,7 @@ export class NewVehicleOnMapComponent {
       .subscribe();
   }
   liveTime: boolean = false
- 
+
   handlePlayClick(event: MouseEvent) {
     event.preventDefault();
     this.vehicleListshow = false;

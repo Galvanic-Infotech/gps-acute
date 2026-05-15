@@ -205,7 +205,7 @@ export class VehicleOnMapV2Component {
       }
 
       // Check if never connected (no position data or invalid position)
-      const neverConnected = !item?.position || !item?.position?.latitude || !item?.position?.longitude || item?.position?.valid !== 1;
+      const neverConnected = item?.position?.status?.toString() === 'Never Connected'
 
       return {
         Device: {
@@ -1081,19 +1081,19 @@ export class VehicleOnMapV2Component {
   updateMarker(latestLatLng: L.LatLng, data: any) {
       const existingMarkerIndex = this.findExistingMarkerIndex(data?.Device?.VehicleNo);
       const address = { Lat: data?.Eventdata?.Latitude, Lng: data?.Eventdata?.Longitude };
-  
+
       const currentLat = data.Eventdata?.Latitude;
       const currentLon = data.Eventdata?.Longitude;
-  
+
       let previousLat: number | null = null;
       let previousLon: number | null = null;
-  
+
       if (existingMarkerIndex !== -1) {
         const prevLatLng = this.markers[existingMarkerIndex].getLatLng();
         previousLat = prevLatLng.lat;
         previousLon = prevLatLng.lng;
       }
-  
+
       // Calculate heading only if there is a previous position
       let heading = 0;
       if (previousLat !== null && previousLon !== null) {
@@ -1101,16 +1101,16 @@ export class VehicleOnMapV2Component {
         const deltaLng = currentLon - previousLon;
         heading = Math.atan2(deltaLng, deltaLat) * (180 / Math.PI);
       }
-  
+
       const canvas = document.createElement('canvas');
       const context: CanvasRenderingContext2D | null = canvas.getContext('2d');
       const img = new Image();
       img.src = this.onCheckVehicleDevice(data);
-  
+
       img.onload = () => {
         const canvasSize = Math.max(img.width, img.height);
         canvas.width = canvas.height = canvasSize;
-  
+
         if (context) {
           context.clearRect(0, 0, canvasSize, canvasSize);
           context.translate(canvasSize / 2, canvasSize / 2);
@@ -1118,28 +1118,28 @@ export class VehicleOnMapV2Component {
           context.drawImage(img, -img.width / 2, -img.height / 2, img.width, img.height);
           context.resetTransform();
         }
-  
+
         const icon = L.icon({
           iconUrl: canvas.toDataURL(),
           iconSize: [40, 40],
           iconAnchor: [20, 20],
         });
-  
+
         const vehicleLabel = `${data?.Device?.VehicleNo}`;
         const markerAnimationDuration = 5000;
-  
+
         if (existingMarkerIndex !== -1) {
           const marker: any = this.markers[existingMarkerIndex];
           const startLatLng = marker.getLatLng();
           const startTime = performance.now();
-  
+
           if (!marker.popupManuallyClosed) {
             let popup = L.popup();
             this.addPopupListener(popup, data);
             popup
               .setContent(this.generateInfoWindowContent(data, 'Address is Loading...'))
               .setLatLng(startLatLng);
-  
+
             this.getLiveAddressLocation(address)
               .pipe(
                 map((addressValue) =>
@@ -1153,7 +1153,7 @@ export class VehicleOnMapV2Component {
               )
               .subscribe((content) => popup.setContent(content));
           }
-  
+
           if (marker.getPopup() && marker.getPopup().isOpen()) {
             marker.getPopup().setContent(this.generateInfoWindowContent(data, 'Address is Loading...'));
             this.getLiveAddressLocation(address)
@@ -1169,7 +1169,7 @@ export class VehicleOnMapV2Component {
               )
               .subscribe((content) => marker.getPopup().setContent(content));
           }
-  
+
           // Animation logic
           const animateMarker = (time: number) => {
             const progress = Math.min((time - startTime) / markerAnimationDuration, 1);
@@ -1177,17 +1177,17 @@ export class VehicleOnMapV2Component {
               startLatLng.lat + (latestLatLng.lat - startLatLng.lat) * progress;
             const intermediateLng =
               startLatLng.lng + (latestLatLng.lng - startLatLng.lng) * progress;
-  
+
             const intermediateLatLng = L.latLng(intermediateLat, intermediateLng);
             marker.setLatLng(intermediateLatLng);
-  
+
             if (this.polyline) {
               const lastPoint: any = this.polyline.getLatLngs().slice(-1)[0];
               if (!lastPoint || lastPoint.lat !== intermediateLat || lastPoint.lng !== intermediateLng) {
                 this.polyline.addLatLng(intermediateLatLng);
               }
             }
-  
+
             if (progress < 1) {
               this.animationRequest = requestAnimationFrame(animateMarker);
             } else {
@@ -1195,9 +1195,9 @@ export class VehicleOnMapV2Component {
               this.polyline?.addLatLng(latestLatLng);
             }
           };
-  
+
           this.animationRequest = requestAnimationFrame(animateMarker);
-  
+
           marker.setIcon(icon);
           marker.bindTooltip(vehicleLabel, {
             permanent: false,
@@ -1213,7 +1213,7 @@ export class VehicleOnMapV2Component {
             className: 'map-label',
           });
           newMarker.addTo(this.map);
-  
+
           // Polyline logic
           if (!this.polyline) {
             this.polyline = L.polyline([latestLatLng], {
@@ -1224,14 +1224,14 @@ export class VehicleOnMapV2Component {
           } else {
             this.polyline.addLatLng(latestLatLng);
           }
-  
+
           // Popup logic
           const popup = L.popup()
             .setContent(this.generateInfoWindowContent(data, 'Address is Loading...'))
             .setLatLng(latestLatLng);
-  
+
           newMarker.bindPopup(popup).openPopup();
-  
+
           this.getLiveAddressLocation(address)
             .pipe(
               map((addressValue) =>
@@ -1245,18 +1245,18 @@ export class VehicleOnMapV2Component {
               )
             )
             .subscribe((content) => popup.setContent(content));
-  
+
           popup.on('close', () => {
             newMarker.popupManuallyClosed = true;
           });
-  
+
           newMarker.on('click', () => {
             if (newMarker.popupManuallyClosed) {
               newMarker.openPopup();
               newMarker.popupManuallyClosed = false;
             }
           });
-  
+
           this.addPopupListener(popup, data);
           this.markers.push(newMarker);
         }
@@ -1288,7 +1288,7 @@ export class VehicleOnMapV2Component {
 
   handlePlayClickData(event: MouseEvent, vehicle: any) {
     console.log("check datat----");
-    
+
     this.liveData = vehicle
     this.selectVehicle(this.liveData)
     event.preventDefault();
@@ -1342,7 +1342,7 @@ export class VehicleOnMapV2Component {
     if (vehicle?._original?.position?.status?.status) {
       const status = vehicle._original.position.status.status;
       const duration = vehicle._original.position.status.duration || '';
-      
+
       // Map status values
       const statusMap: any = {
         'running': 'Running',
@@ -1352,15 +1352,15 @@ export class VehicleOnMapV2Component {
         'never connected': 'Never Connected',
         'point expired': 'Point Expired'
       };
-      
+
       const statusText = statusMap[status.toLowerCase()] || status;
-      
+
       if (duration) {
         return `${statusText} (${duration})`;
       }
       return statusText;
     }
-    
+
     // Fallback to old structure
     if (!vehicle || !vehicle?.StatusDuration || vehicle?.StatusDuration == null)
       return '';
@@ -1398,7 +1398,7 @@ export class VehicleOnMapV2Component {
     this.clearMarkers()
   }
 
-  closeTab(event: any) { 
+  closeTab(event: any) {
     this.confirmedVehicleId = null;
     this.liveData = null
     this.infoVehicleWindows = [];
