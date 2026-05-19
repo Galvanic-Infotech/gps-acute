@@ -81,6 +81,9 @@ export class ReportManageListComponent {
   tableSize = 50;
   tableSizes = [25, 50, 100, 500, 1000, 'All'];
   daysDifference: any;
+  distanceVsSpeedData: any[] = [];
+  distanceVsSpeedTotalRecords: number = 0;
+  distanceVsSpeedTotalDistance: number = 0;
 
   constructor(
     private commonService: CommonService,
@@ -200,6 +203,13 @@ export class ReportManageListComponent {
       this.groupingMovement()
     } else if (this.filterType === 'GeoFence Report') {
       this.groupingGeofence();
+    } else if (this.filterType === 'Distance vs Speed') {
+      this.distanceVsSpeedData = this.vehicle || [];
+      this.distanceVsSpeedTotalRecords = this.distanceVsSpeedData.reduce((sum: number, item: any) => sum + (item.totalRecords || 0), 0);
+      this.distanceVsSpeedTotalDistance = this.distanceVsSpeedData.reduce((sum: number, item: any) => {
+        const dist = parseFloat(item.totalDistance) || 0;
+        return sum + dist;
+      }, 0);
     }
   }
 
@@ -626,6 +636,13 @@ export class ReportManageListComponent {
         return;
       }
       this.alertReport()
+    }
+    if (this.filterType === 'Distance vs Speed') {
+      if (!this.distanceVsSpeedData || this.distanceVsSpeedData.length === 0) {
+        this.notificationService.showError('No data available to export');
+        return;
+      }
+      this.distanceVsSpeedExcel()
     }
   }
 
@@ -1165,6 +1182,9 @@ export class ReportManageListComponent {
     }
     if (this.filterType === 'Alert Report') {
       this.alertpdf()
+    }
+    if (this.filterType === 'Distance vs Speed') {
+      this.distanceVsSpeedPdf()
     }
   }
 
@@ -1748,6 +1768,72 @@ export class ReportManageListComponent {
 
     // Save the PDF
     doc.save('durationReport.pdf');
+  }
+
+  distanceVsSpeedExcel() {
+    const formattedData = this.distanceVsSpeedData.map((item: any, index: number) => ({
+      'SL NO': index + 1,
+      'Vehicle Name': item.vehicleName,
+      'Device IMEI': item.deviceImei,
+      'Speed Range': item.speedRange,
+      'Total Records': item.totalRecords,
+      'Total Distance': item.totalDistance
+    }));
+
+    formattedData.push({
+      'SL NO': '' as any,
+      'Vehicle Name': 'Total',
+      'Device IMEI': '',
+      'Speed Range': '',
+      'Total Records': this.distanceVsSpeedTotalRecords,
+      'Total Distance': this.distanceVsSpeedTotalDistance.toFixed(2) + ' KM'
+    });
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(formattedData);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Distance vs Speed');
+
+    const columnWidths: Record<string, number> = Object.keys(ws).reduce((acc, key) => {
+      if (key[0] === '!') return acc;
+      const col = key.replace(/[0-9]/g, '');
+      const content = ws[key]?.v?.toString() || '';
+      acc[col] = Math.max(acc[col] || 10, content.length + 5);
+      return acc;
+    }, {} as Record<string, number>);
+    ws['!cols'] = Object.entries(columnWidths).map(([_, width]) => ({ width: width as number }));
+
+    XLSX.writeFile(wb, 'DistanceVsSpeedReport.xlsx');
+  }
+
+  distanceVsSpeedPdf() {
+    const doc = new jsPDF();
+    doc.setFontSize(18);
+    doc.text('Distance vs Speed Report', 14, 22);
+
+    const columns = ['SL NO', 'Vehicle Name', 'Device IMEI', 'Speed Range', 'Total Records', 'Total Distance'];
+    const rows = this.distanceVsSpeedData.map((item: any, index: number) => [
+      index + 1,
+      item.vehicleName,
+      item.deviceImei,
+      item.speedRange,
+      item.totalRecords,
+      item.totalDistance
+    ]);
+
+    rows.push(['', 'Total', '', '', this.distanceVsSpeedTotalRecords, this.distanceVsSpeedTotalDistance.toFixed(2) + ' KM']);
+
+    autoTable(doc, {
+      head: [columns],
+      body: rows,
+      startY: 30,
+      tableWidth: 'auto',
+      margin: { top: 20, right: 5, bottom: 20, left: 5 },
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: [22, 160, 133], textColor: [255, 255, 255], fontStyle: 'bold' },
+      theme: 'striped',
+    });
+
+    doc.save('DistanceVsSpeedReport.pdf');
   }
 
   distanceToPdf() {

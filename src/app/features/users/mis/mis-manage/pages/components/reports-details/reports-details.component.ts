@@ -81,6 +81,9 @@ export class ReportsDetailsComponent {
   totalDurationData = 0
   isLocation: any;
   daysDifference: any;
+  distanceVsSpeedData: any[] = [];
+  distanceVsSpeedTotalRecords: number = 0;
+  distanceVsSpeedTotalDistance: number = 0;
   
 
   constructor(
@@ -197,8 +200,15 @@ export class ReportsDetailsComponent {
       this.totalDurationValue();
     }else if(this.filterType === 'Movement Summary'){      
       this.groupingMovement()
-    } else if(this.filterType === 'GeoFence Report'){      
+    } else if(this.filterType === 'GeoFence Report'){
       this.groupingGeofence()
+    } else if (this.filterType === 'Distance vs Speed') {
+      this.distanceVsSpeedData = this.vehicle || [];
+      this.distanceVsSpeedTotalRecords = this.distanceVsSpeedData.reduce((sum: number, item: any) => sum + (item.totalRecords || 0), 0);
+      this.distanceVsSpeedTotalDistance = this.distanceVsSpeedData.reduce((sum: number, item: any) => {
+        const dist = parseFloat(item.totalDistance) || 0;
+        return sum + dist;
+      }, 0);
     }
     //  else if (this.filterType === 'Overspeed Report'){
     //   this.count = this.vehicle?.Points[0]?.TotalCount
@@ -553,7 +563,10 @@ this.durationReport()
     }
     if(this.filterType === 'Movement Summary') {
      this.movmentSummary(this.groupedData)
-      
+
+    }
+    if(this.filterType === 'Distance vs Speed') {
+      this.distanceVsSpeedToExcel();
     }
   }
   async movmentSummary(groupedData: any[]) {
@@ -1073,8 +1086,11 @@ this.durationpdf()
     }
     if(this.filterType === 'Movement Summary') {
       this.movmentSummarypdf(this.groupedData)
-       
+
      }
+    if(this.filterType === 'Distance vs Speed') {
+      this.distanceVsSpeedToPdf();
+    }
   }
   async movmentSummarypdf(groupedData: any[]) {
     // Create a new jsPDF instance
@@ -1635,6 +1651,88 @@ this.durationpdf()
     // Save the PDF
     doc.save('AlertReport.pdf');
   }
+  distanceVsSpeedToExcel() {
+    const formattedData = this.distanceVsSpeedData.map((item: any, index: number) => ({
+      'SL NO': index + 1,
+      'Vehicle Name': item.vehicleName || '',
+      'Device IMEI': item.deviceImei || '',
+      'Speed Range': item.speedRange || '',
+      'Total Records': item.totalRecords || 0,
+      'Total Distance': item.totalDistance || '0 KM',
+    }));
+
+    formattedData.push({
+      'SL NO': '' as any,
+      'Vehicle Name': 'Total',
+      'Device IMEI': '',
+      'Speed Range': '',
+      'Total Records': this.distanceVsSpeedTotalRecords,
+      'Total Distance': this.distanceVsSpeedTotalDistance.toFixed(2) + ' KM',
+    });
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(formattedData);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Distance vs Speed');
+
+    const columnWidths: Record<string, number> = Object.keys(ws).reduce((acc, key) => {
+      if (key[0] === '!') return acc;
+      const col = key.replace(/[0-9]/g, '');
+      const content = ws[key]?.v?.toString() || '';
+      acc[col] = Math.max(acc[col] || 10, content.length + 5);
+      return acc;
+    }, {} as Record<string, number>);
+
+    ws['!cols'] = Object.entries(columnWidths).map(([_, width]) => ({ width: width as number }));
+
+    XLSX.writeFile(wb, 'DistanceVsSpeedReport.xlsx');
+  }
+
+  distanceVsSpeedToPdf() {
+    const doc = new jsPDF();
+
+    doc.setFontSize(18);
+    doc.text('Distance vs Speed Report', 14, 22);
+
+    const columns = ['SL NO', 'Vehicle Name', 'Device IMEI', 'Speed Range', 'Total Records', 'Total Distance'];
+    const rows = this.distanceVsSpeedData.map((item: any, index: number) => [
+      index + 1,
+      item.vehicleName || '',
+      item.deviceImei || '',
+      item.speedRange || '',
+      item.totalRecords || 0,
+      item.totalDistance || '0 KM',
+    ]);
+
+    rows.push([
+      '',
+      'Total',
+      '',
+      '',
+      this.distanceVsSpeedTotalRecords,
+      this.distanceVsSpeedTotalDistance.toFixed(2) + ' KM',
+    ]);
+
+    autoTable(doc, {
+      head: [columns],
+      body: rows,
+      startY: 30,
+      tableWidth: 'auto',
+      margin: { top: 20, right: 5, bottom: 20, left: 5 },
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+      },
+      headStyles: {
+        fillColor: [22, 160, 133],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold',
+      },
+      theme: 'striped',
+    });
+
+    doc.save('DistanceVsSpeedReport.pdf');
+  }
+
   distanceToPdf() {
     // Extract table data from the DOM
     const tableElement = this.table.nativeElement;
@@ -1642,7 +1740,7 @@ this.durationpdf()
     const rows = Array.from(tableElement.querySelectorAll('tbody tr')).map((tr: any) =>
       Array.from(tr.querySelectorAll('td')).map((td: any) => td.innerText)
     );
-  
+
     // Create a new jsPDF instance with a larger page size (e.g., A3) and landscape orientation
     const doc: any = new jsPDF({ orientation: 'landscape', format: 'a3' });
   

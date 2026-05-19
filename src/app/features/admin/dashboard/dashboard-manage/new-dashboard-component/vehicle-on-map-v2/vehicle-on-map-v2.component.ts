@@ -204,8 +204,8 @@ export class VehicleOnMapV2Component {
         }
       }
 
-      // Check if never connected (no position data or invalid position)
-      const neverConnected = item?.position?.status?.toString() === 'Never Connected'
+      const statusValue = item?.position?.status?.status || '';
+      const neverConnected = statusValue.toLowerCase() === 'never connected';
 
       return {
         Device: {
@@ -279,8 +279,12 @@ export class VehicleOnMapV2Component {
         const status = res?._original?.position?.status?.status?.toLowerCase() || '';
         return status === 'dormant' || (res?.Status == 1 && res?.SubStatus == 3);
       });
-    } else if (this.selectedStatus === 'Never Connected') {
-      this.vehicleData = data.filter((res: any) => res?.neverConnected === true);
+    } else if (this.selectedStatus === 'Never Connected' || this.selectedStatus === 'No Conn.') {
+      this.vehicleData = data.filter((res: any) => {
+        if (res?.neverConnected === true) return true;
+        const status = res?._original?.position?.status?.status?.toLowerCase() || '';
+        return status === 'never connected';
+      });
     } else if (this.selectedStatus === 'Point Expired') {
       this.vehicleData = data.filter((res: any) => res?.isexpired === 1);
     } else if (this.selectedStatus === 'Expired Soon') {

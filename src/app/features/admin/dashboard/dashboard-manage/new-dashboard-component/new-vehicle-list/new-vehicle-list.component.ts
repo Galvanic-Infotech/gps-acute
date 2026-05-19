@@ -95,7 +95,6 @@ export class NewVehicleListComponent {
 
   ngOnChanges() {
     this.swiperList = this.vehicleDatacount;
-    this.searchText = '';
     this.updateVehicleListHeight()
   }
 

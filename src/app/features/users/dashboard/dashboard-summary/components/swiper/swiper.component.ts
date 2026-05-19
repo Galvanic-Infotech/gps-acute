@@ -48,12 +48,17 @@ export class SwiperComponent {
 
   private computeCounts() {
     this.neverConnectedCount = this.vehicleStauts?.filter((res: any) => {
+      if (res?.neverConnected === true) return true;
+      const status = res?._original?.position?.status?.status?.toLowerCase() || '';
+      if (status === 'never connected') return true;
       if (res?.Status != 0) return false;
       if (!res?.StatusDuration) return true;
       const parts = res.StatusDuration.split(' ');
       return parts[0] === 'Never';
     });
     this.offlineCount = this.vehicleStauts?.filter((res: any) => {
+      const status = res?._original?.position?.status?.status?.toLowerCase() || '';
+      if (status === 'offline') return true;
       if (res?.Status != 0) return false;
       if (!res?.StatusDuration) return false;
       const parts = res.StatusDuration.split(' ');

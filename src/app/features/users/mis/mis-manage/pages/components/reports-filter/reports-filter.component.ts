@@ -67,6 +67,10 @@ export class ReportsFilterComponent {
     {
       id: 11,
       title: 'Movement Summary',
+    },
+    {
+      id: 12,
+      title: 'Distance vs Speed',
     }
   ];
   isMultiple = false;
@@ -321,7 +325,8 @@ export class ReportsFilterComponent {
           formValue.filtername === 'Overspeed Report' ||
           formValue.filtername === 'GeoFence Report' ||
           formValue.filtername === 'AC Report' ||
-          formValue.filtername === 'Alert Report'
+          formValue.filtername === 'Alert Report' ||
+          formValue.filtername === 'Distance vs Speed'
           ? deviceData
           : formValue.filtername === 'Movement Summary' ? Number(formValue?.vehicledata) : deviceData,
       FromTime: formatDate(formValue.fromDate, 'yyyy-MM-dd HH:mm:ss', 'en-US'),
@@ -336,7 +341,8 @@ export class ReportsFilterComponent {
       formValue.filtername == 'Stop' ||
       formValue.filtername == 'Idle' ||
       formValue.filtername === 'GeoFence Report' ||
-      formValue.filtername === 'Alert Report'
+      formValue.filtername === 'Alert Report' ||
+      formValue.filtername === 'Distance vs Speed'
 
     ) {
       payload['limit_count'] = this.tableSize;
@@ -357,7 +363,8 @@ export class ReportsFilterComponent {
       'AC Report': 'Ac',
       'Temperature Report': 'Temp',
       'Alert Report': 'Alert',
-      'Movement Summary' : 'Movement'
+      'Movement Summary' : 'Movement',
+      'Distance vs Speed': 'reports/DistanceVsSpeed'
       // 'Overspeed Report':'Overspeed/OverSpeedlimitReport'
     };
 
@@ -413,6 +420,20 @@ export class ReportsFilterComponent {
               this.data = reportData;
             }else if(reportType === 'Alert'){
               this.data = res?.body?.result?.data;
+            } else if (formValue.filtername === 'Distance vs Speed') {
+              if (!reportData || (Array.isArray(reportData) && reportData.length === 0)) {
+                this.data = [];
+                this.ReportsDetails.setData(this.data, formValue.filtername, formValue, type, this.isLocation);
+                return;
+              }
+              this.data = reportData.map((item: any, index: number) => ({
+                slNo: index + 1,
+                vehicleName: item.vehicleName || item.VehicleName || item.vehicleNo || item.VehicleNo || '',
+                deviceImei: item.deviceImei || item.DeviceImei || item.imei || item.IMEI || '',
+                speedRange: item.speedRange || item.SpeedRange || '',
+                totalRecords: item.totalRecords || item.TotalRecords || 0,
+                totalDistance: item.totalDistance || item.TotalDistance || '0 KM'
+              }));
             } else {
               // Generic check for all filter types
               if (!reportData || reportData.length === 0) {

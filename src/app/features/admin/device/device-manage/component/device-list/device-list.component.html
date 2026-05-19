@@ -77,7 +77,7 @@
                                                         <span>{{ row?.creationTime ? (row.creationTime | date : "dd/MM/yyyy") : 'N/A' }}</span>
                                                     </td>
                                                     <td>
-                                                        <span>{{ row?.validity?.nextRechargeDate ? (row.validity.nextRechargeDate | date : "dd/MM/yyyy") : 'N/A' }}</span>
+                                                        <span>{{ row?.validity?.customerRechargeDate ? (row.validity.customerRechargeDate | date : "dd/MM/yyyy") : 'N/A' }}</span>
                                                     </td>
                                                     <td>
                                                         <button mat-icon-button (click)="onContextMenu($event, row, i)">

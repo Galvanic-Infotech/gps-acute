@@ -99,6 +99,10 @@ export class ReportManageFilterComponent {
       id: 11,
       title: 'Movement Summary',
     },
+    {
+      id: 12,
+      title: 'Distance vs Speed',
+    },
   ];
   durationcontrol: any;
   data: any;
@@ -589,7 +593,8 @@ export class ReportManageFilterComponent {
       formValue.filtername === 'GeoFence Report' ||
       formValue.filtername === 'temperature Report' ||
       formValue.filtername === 'Duration Report' ||
-      formValue.filtername === 'Movement Summary';
+      formValue.filtername === 'Movement Summary' ||
+      formValue.filtername === 'Distance vs Speed';
 
     let payload: any = {
       DeviceId:
@@ -600,7 +605,8 @@ export class ReportManageFilterComponent {
           formValue.filtername === 'Overspeed Report' ||
           formValue.filtername === 'Duration Report' ||
           formValue.filtername === 'temperature Report' ||
-          formValue.filtername === 'GeoFence Report'
+          formValue.filtername === 'GeoFence Report' ||
+          formValue.filtername === 'Distance vs Speed'
           ? (deviceData.length === 1 ? deviceData[0] : deviceData)
           : formValue.filtername === 'Movement Summary'
             ? Number(formValue?.vehicledata)
@@ -621,7 +627,8 @@ export class ReportManageFilterComponent {
       formValue.filtername === 'Trip Report' ||
       formValue.filtername === 'Overspeed Report' ||
       formValue.filtername === 'temperature Report' ||
-      formValue.filtername === 'GeoFence Report'
+      formValue.filtername === 'GeoFence Report' ||
+      formValue.filtername === 'Distance vs Speed'
     ) {
       // payload['limit_count'] = this.tableSize;
       // payload['page_num'] = this.page;
@@ -700,6 +707,7 @@ export class ReportManageFilterComponent {
       'AC Report': 'reports/AcReport',
       'Duration Report': 'reports/distancereport/summary',
       'Movement Summary': 'history',
+      'Distance vs Speed': 'reports/DistanceVsSpeed',
     };
 
     const reportType = this.reportTypeMapping[formValue.filtername];
@@ -725,6 +733,8 @@ export class ReportManageFilterComponent {
               } else if (formValue.filtername === 'Distance') {
                 this.data = [];
               } else if (formValue.filtername === 'Duration Report') {
+                this.data = [];
+              } else if (formValue.filtername === 'Distance vs Speed') {
                 this.data = [];
               } else {
                 this.data = null;
@@ -757,6 +767,8 @@ export class ReportManageFilterComponent {
               } else if (formValue.filtername === 'Distance') {
                 this.data = [];
               } else if (formValue.filtername === 'Duration Report') {
+                this.data = [];
+              } else if (formValue.filtername === 'Distance vs Speed') {
                 this.data = [];
               } else {
                 this.data = null;
@@ -1222,6 +1234,30 @@ export class ReportManageFilterComponent {
               });
 
               this.data = transformedData;
+            }
+            // Special case for Distance vs Speed Report
+            else if (formValue.filtername === 'Distance vs Speed') {
+              if (!reportData || (Array.isArray(reportData) && reportData.length === 0)) {
+                this.data = [];
+                this.ReportsDetails.setData(
+                  this.data,
+                  formValue.filtername,
+                  formValue,
+                  type,
+                  this.isLocation
+                );
+                return;
+              }
+
+              // Transform data: each item has vehicleName, deviceImei, speedRange, totalRecords, totalDistance
+              this.data = reportData.map((item: any, index: number) => ({
+                slNo: index + 1,
+                vehicleName: item.vehicleName || item.VehicleName || item.vehicleNo || item.VehicleNo || '',
+                deviceImei: item.deviceImei || item.DeviceImei || item.imei || item.IMEI || '',
+                speedRange: item.speedRange || item.SpeedRange || '',
+                totalRecords: item.totalRecords || item.TotalRecords || 0,
+                totalDistance: item.totalDistance || item.TotalDistance || '0 KM'
+              }));
             } else {
               // Generic check for all filter types
               if (!reportData || (Array.isArray(reportData) && reportData.length === 0)) {
@@ -1264,6 +1300,8 @@ export class ReportManageFilterComponent {
             } else if (this.formValueData?.filtername === 'Distance') {
               this.data = [];
             } else if (this.formValueData?.filtername === 'Duration Report') {
+              this.data = [];
+            } else if (this.formValueData?.filtername === 'Distance vs Speed') {
               this.data = [];
             } else {
               this.data = null;
