@@ -11,6 +11,7 @@ import { ReportManageListComponent } from '../report-manage-list/report-manage-l
 import { StorageService } from 'src/app/features/http-services/storage.service';
 import { DeviceManageService } from 'src/app/features/admin/device/device-manage/service/device-manage.service';
 import { API_CONSTANTS } from 'src/app/features/shared/constant/API-CONSTANTS';
+import { buildDistanceVsSpeedRows } from 'src/app/features/shared/utils/distance-vs-speed.util';
 
 @Component({
   selector: 'app-report-manage-filter',
@@ -198,7 +199,12 @@ export class ReportManageFilterComponent {
             if (device.vehicleNo && !vehicleMap.has(device.vehicleNo)) {
               vehicleMap.set(device.vehicleNo, {
                 value: device.id,
-                text: device.vehicleNo
+                text: device.vehicleNo,
+                deviceImei:
+                  device.deviceImei ||
+                  device.deviceUid ||
+                  device.deviceId ||
+                  '',
               });
             }
           });
@@ -673,6 +679,25 @@ export class ReportManageFilterComponent {
       Object.assign(payload, cleanPayload);
     }
 
+    // Special handling for Distance vs Speed - use history endpoint
+    if (formValue.filtername === 'Distance vs Speed') {
+      let deviceIdValue: any;
+      if (Array.isArray(payload.DeviceId) && payload.DeviceId.length > 0) {
+        deviceIdValue = payload.DeviceId[0];
+      } else {
+        deviceIdValue = payload.DeviceId;
+      }
+
+      const cleanPayload: any = {
+        DeviceId: String(deviceIdValue),
+        FromTime: payload.FromTime || payload.FromDate,
+        ToTime: payload.ToTime || payload.ToDate,
+      };
+
+      Object.keys(payload).forEach((key) => delete payload[key]);
+      Object.assign(payload, cleanPayload);
+    }
+
     // Special handling for GeoFence Report - clean payload to avoid duplicates
     if (formValue.filtername === 'GeoFence Report') {
       let deviceIdValue: any;
@@ -707,7 +732,7 @@ export class ReportManageFilterComponent {
       'AC Report': 'reports/AcReport',
       'Duration Report': 'reports/distancereport/summary',
       'Movement Summary': 'history',
-      'Distance vs Speed': 'reports/DistanceVsSpeed',
+      'Distance vs Speed': API_CONSTANTS.historyApi,
     };
 
     const reportType = this.reportTypeMapping[formValue.filtername];
@@ -1235,7 +1260,7 @@ export class ReportManageFilterComponent {
 
               this.data = transformedData;
             }
-            // Special case for Distance vs Speed Report
+            // Special case for Distance vs Speed Report - aggregate history by speed range
             else if (formValue.filtername === 'Distance vs Speed') {
               if (!reportData || (Array.isArray(reportData) && reportData.length === 0)) {
                 this.data = [];
@@ -1249,15 +1274,23 @@ export class ReportManageFilterComponent {
                 return;
               }
 
-              // Transform data: each item has vehicleName, deviceImei, speedRange, totalRecords, totalDistance
-              this.data = reportData.map((item: any, index: number) => ({
-                slNo: index + 1,
-                vehicleName: item.vehicleName || item.VehicleName || item.vehicleNo || item.VehicleNo || '',
-                deviceImei: item.deviceImei || item.DeviceImei || item.imei || item.IMEI || '',
-                speedRange: item.speedRange || item.SpeedRange || '',
-                totalRecords: item.totalRecords || item.TotalRecords || 0,
-                totalDistance: item.totalDistance || item.TotalDistance || '0 KM'
-              }));
+              const selectedVehicle = this.selectedVehicles[0];
+              const vehicleName =
+                selectedVehicle?.text ||
+                reportData[0]?.vehicleNo ||
+                reportData[0]?.VehicleNo ||
+                '';
+              const deviceImei =
+                selectedVehicle?.deviceImei ||
+                reportData[0]?.deviceImei ||
+                reportData[0]?.imei ||
+                '';
+
+              this.data = buildDistanceVsSpeedRows(
+                reportData,
+                vehicleName,
+                deviceImei
+              );
             } else {
               // Generic check for all filter types
               if (!reportData || (Array.isArray(reportData) && reportData.length === 0)) {

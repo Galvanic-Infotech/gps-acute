@@ -206,7 +206,7 @@ export class ReportsDetailsComponent {
       this.distanceVsSpeedData = this.vehicle || [];
       this.distanceVsSpeedTotalRecords = this.distanceVsSpeedData.reduce((sum: number, item: any) => sum + (item.totalRecords || 0), 0);
       this.distanceVsSpeedTotalDistance = this.distanceVsSpeedData.reduce((sum: number, item: any) => {
-        const dist = parseFloat(item.totalDistance) || 0;
+        const dist = parseFloat(String(item.totalDistance || '0').replace(/[^\d.]/g, '')) || 0;
         return sum + dist;
       }, 0);
     }

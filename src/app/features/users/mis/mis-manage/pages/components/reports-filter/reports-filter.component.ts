@@ -11,6 +11,8 @@ import { catchError, of, tap } from 'rxjs';
 import { NgxMatDatetimePicker } from '@angular-material-components/datetime-picker';
 import { MatDatepicker } from '@angular/material/datepicker';
 import { DashboardService } from 'src/app/features/users/dashboard/dashboard-summary/services/dashboard.service';
+import { API_CONSTANTS } from 'src/app/features/shared/constant/API-CONSTANTS';
+import { buildDistanceVsSpeedRows } from 'src/app/features/shared/utils/distance-vs-speed.util';
 
 @Component({
   selector: 'reports-filter',
@@ -318,21 +320,51 @@ export class ReportsFilterComponent {
     let service: any;
     let deviceData = this.selectedVehicles.map((val) => val.value)
 
-    payload = {
-      DeviceID:
-        formValue.filtername === 'Idle' ||
-          formValue.filtername === 'Speed Report' ||
-          formValue.filtername === 'Overspeed Report' ||
-          formValue.filtername === 'GeoFence Report' ||
-          formValue.filtername === 'AC Report' ||
-          formValue.filtername === 'Alert Report' ||
-          formValue.filtername === 'Distance vs Speed'
-          ? deviceData
-          : formValue.filtername === 'Movement Summary' ? Number(formValue?.vehicledata) : deviceData,
-      FromTime: formatDate(formValue.fromDate, 'yyyy-MM-dd HH:mm:ss', 'en-US'),
-      ToTime: formatDate(formValue.toDate, 'yyyy-MM-dd HH:mm:ss', 'en-US'),
-      ...(this.durationcontrol && { SpeedLimit: formValue.speed }),
+    const formatDateWithTimezone = (date: Date): string => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const hours = String(date.getHours()).padStart(2, '0');
+      const minutes = String(date.getMinutes()).padStart(2, '0');
+      const seconds = String(date.getSeconds()).padStart(2, '0');
+      const offset = -date.getTimezoneOffset();
+      const offsetHours = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0');
+      const offsetMinutes = String(Math.abs(offset) % 60).padStart(2, '0');
+      const offsetSign = offset >= 0 ? '+' : '-';
+      return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
     };
+
+    const useHistoryDateFormat = formValue.filtername === 'Distance vs Speed';
+    const fromTime = useHistoryDateFormat
+      ? formatDateWithTimezone(new Date(formValue.fromDate))
+      : formatDate(formValue.fromDate, 'yyyy-MM-dd HH:mm:ss', 'en-US');
+    const toTime = useHistoryDateFormat
+      ? formatDateWithTimezone(new Date(formValue.toDate))
+      : formatDate(formValue.toDate, 'yyyy-MM-dd HH:mm:ss', 'en-US');
+
+    payload = formValue.filtername === 'Distance vs Speed'
+      ? {
+          DeviceId: String(deviceData[0]),
+          FromTime: fromTime,
+          ToTime: toTime,
+        }
+      : {
+          DeviceID:
+            formValue.filtername === 'Idle' ||
+              formValue.filtername === 'Speed Report' ||
+              formValue.filtername === 'Overspeed Report' ||
+              formValue.filtername === 'GeoFence Report' ||
+              formValue.filtername === 'AC Report' ||
+              formValue.filtername === 'Alert Report'
+              ? deviceData
+              : formValue.filtername === 'Movement Summary'
+                ? Number(formValue?.vehicledata)
+                : deviceData,
+          FromTime: fromTime,
+          ToTime: toTime,
+          ...(this.durationcontrol && { SpeedLimit: formValue.speed }),
+        };
+
     if (
       formValue.filtername == 'Speed Report' ||
       formValue.filtername == 'Overspeed Report' ||
@@ -341,9 +373,7 @@ export class ReportsFilterComponent {
       formValue.filtername == 'Stop' ||
       formValue.filtername == 'Idle' ||
       formValue.filtername === 'GeoFence Report' ||
-      formValue.filtername === 'Alert Report' ||
-      formValue.filtername === 'Distance vs Speed'
-
+      formValue.filtername === 'Alert Report'
     ) {
       payload['limit_count'] = this.tableSize;
       payload['page_num'] = this.page;
@@ -364,7 +394,7 @@ export class ReportsFilterComponent {
       'Temperature Report': 'Temp',
       'Alert Report': 'Alert',
       'Movement Summary' : 'Movement',
-      'Distance vs Speed': 'reports/DistanceVsSpeed'
+      'Distance vs Speed': API_CONSTANTS.historyApi
       // 'Overspeed Report':'Overspeed/OverSpeedlimitReport'
     };
 
@@ -399,7 +429,10 @@ export class ReportsFilterComponent {
               return;
             }
 
-            let reportData = res?.body?.Result?.Data;
+            let reportData =
+              formValue.filtername === 'Distance vs Speed'
+                ? res?.body?.data || res?.body?.Data || res?.data
+                : res?.body?.Result?.Data;
 
             // Special case for GeoFence Report
             if (formValue.filtername === 'GeoFence Report') {
@@ -426,14 +459,24 @@ export class ReportsFilterComponent {
                 this.ReportsDetails.setData(this.data, formValue.filtername, formValue, type, this.isLocation);
                 return;
               }
-              this.data = reportData.map((item: any, index: number) => ({
-                slNo: index + 1,
-                vehicleName: item.vehicleName || item.VehicleName || item.vehicleNo || item.VehicleNo || '',
-                deviceImei: item.deviceImei || item.DeviceImei || item.imei || item.IMEI || '',
-                speedRange: item.speedRange || item.SpeedRange || '',
-                totalRecords: item.totalRecords || item.TotalRecords || 0,
-                totalDistance: item.totalDistance || item.TotalDistance || '0 KM'
-              }));
+
+              const selectedVehicle = this.selectedVehicles[0];
+              const vehicleName =
+                selectedVehicle?.text ||
+                reportData[0]?.vehicleNo ||
+                reportData[0]?.VehicleNo ||
+                '';
+              const deviceImei =
+                selectedVehicle?.deviceImei ||
+                reportData[0]?.deviceImei ||
+                reportData[0]?.imei ||
+                '';
+
+              this.data = buildDistanceVsSpeedRows(
+                reportData,
+                vehicleName,
+                deviceImei
+              );
             } else {
               // Generic check for all filter types
               if (!reportData || reportData.length === 0) {
@@ -484,6 +527,12 @@ export class ReportsFilterComponent {
         return {
           value: item?.Device?.Id,
           text: item?.Device?.VehicleNo,
+          deviceImei:
+            item?.Device?.DeviceImei ||
+            item?.Device?.IMEI ||
+            item?.Device?.deviceImei ||
+            item?.Device?.deviceUid ||
+            '',
         };
       });
     });
