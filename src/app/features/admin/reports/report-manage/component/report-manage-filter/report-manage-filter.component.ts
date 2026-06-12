@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { AdminDashboardService } from 'src/app/features/admin/dashboard/dashboard-manage/services/admin-dashboard.service';
 import { SharedService } from 'src/app/features/http-services/shared.service';
 import { ReportManageService } from '../../services/report-manage.service';
-import { catchError, of, tap } from 'rxjs';
+import { catchError, forkJoin, of, tap } from 'rxjs';
 import { ConfirmationDialogComponent } from 'src/app/features/shared/components/confirmation-dialog/confirmation-dialog.component';
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
 import { ReportManageListComponent } from '../report-manage-list/report-manage-list.component';
@@ -12,6 +12,10 @@ import { StorageService } from 'src/app/features/http-services/storage.service';
 import { DeviceManageService } from 'src/app/features/admin/device/device-manage/service/device-manage.service';
 import { API_CONSTANTS } from 'src/app/features/shared/constant/API-CONSTANTS';
 import { buildDistanceVsSpeedRows } from 'src/app/features/shared/utils/distance-vs-speed.util';
+import {
+  getReportDateRangeErrorMessage,
+  isReportDateRangeValid,
+} from 'src/app/features/shared/utils/report-date-range.util';
 
 @Component({
   selector: 'app-report-manage-filter',
@@ -37,6 +41,14 @@ export class ReportManageFilterComponent {
   isLocation: boolean = false;
   movementcontrol: boolean = false;
   selectedVehicles: any[] = [];
+  allowMultipleVehicles = false;
+  readonly multiVehicleReportTypes = new Set([
+    'Distance',
+    'Idle',
+    'Trip Report',
+    'Overspeed Report',
+    'GeoFence Report',
+  ]);
   messageAlert: any = 'warning';
   alertData: any = {
     message:
@@ -286,6 +298,7 @@ export class ReportManageFilterComponent {
       }
       alertTypeControl?.updateValueAndValidity();
 
+      this.updateVehicleSelectMode(value);
     });
 
     this.reportForm.get('timeformat')?.valueChanges.subscribe((value) => {
@@ -305,12 +318,6 @@ export class ReportManageFilterComponent {
           case 'Weekly':
             newFromDate.setDate(currentDate.getDate() - 7);
             break;
-          case '15 Days':
-            newFromDate.setDate(currentDate.getDate() - 15);
-            break;
-          case '30 Days':
-            newFromDate.setDate(currentDate.getDate() - 30);
-            break;
           default:
             break;
         }
@@ -320,8 +327,78 @@ export class ReportManageFilterComponent {
     });
 
     this.reportForm.get('vehicle')?.valueChanges.subscribe((value) => {
-      this.selectedVehicles = value;
+      this.syncSelectedVehicles(value);
     });
+
+    this.reportForm.get('fromDate')?.valueChanges.subscribe(() => {
+      this.validateReportDateRange();
+    });
+    this.reportForm.get('toDate')?.valueChanges.subscribe(() => {
+      this.validateReportDateRange();
+    });
+  }
+
+  private validateReportDateRange(): boolean {
+    const from = this.reportForm.get('fromDate')?.value;
+    const to = this.reportForm.get('toDate')?.value;
+    const toControl = this.reportForm.get('toDate');
+    if (!from || !to || !toControl) {
+      return true;
+    }
+
+    const valid = isReportDateRangeValid(new Date(from), new Date(to));
+    const errors = { ...(toControl.errors || {}) };
+
+    if (!valid) {
+      errors['maxRange'] = true;
+      toControl.setErrors(errors);
+    } else if (errors['maxRange']) {
+      delete errors['maxRange'];
+      toControl.setErrors(Object.keys(errors).length ? errors : null);
+    }
+
+    return valid;
+  }
+
+  isMultiVehicleReport(reportName: string): boolean {
+    return this.multiVehicleReportTypes.has(reportName);
+  }
+
+  private syncSelectedVehicles(value: any): void {
+    let vehicles = this.normalizeSelectedVehicles(value);
+    if (!this.allowMultipleVehicles && vehicles.length > 1) {
+      vehicles = [vehicles[vehicles.length - 1]];
+      this.reportForm
+        .get('vehicle')
+        ?.setValue(
+          this.allowMultipleVehicles ? vehicles : vehicles[0],
+          { emitEvent: false }
+        );
+    }
+    this.selectedVehicles = vehicles;
+  }
+
+  private normalizeSelectedVehicles(value: any): any[] {
+    if (!value) {
+      return [];
+    }
+    return Array.isArray(value) ? value : [value];
+  }
+
+  private updateVehicleSelectMode(reportName: string): void {
+    this.allowMultipleVehicles = this.isMultiVehicleReport(reportName);
+    if (!this.allowMultipleVehicles) {
+      const vehicles = this.normalizeSelectedVehicles(
+        this.reportForm.get('vehicle')?.value
+      );
+      if (vehicles.length > 1) {
+        const single = vehicles[0];
+        this.selectedVehicles = [single];
+        this.reportForm
+          .get('vehicle')
+          ?.setValue(single, { emitEvent: false });
+      }
+    }
   }
 
   timecheck(event: any) {
@@ -359,6 +436,7 @@ export class ReportManageFilterComponent {
 
   onItemSelect(event: any) {
     this.durationcontrol = event === 'Overspeed Report';
+    this.updateVehicleSelectMode(event);
     this.ReportsDetails.setData(this.data, '', '', '', '');
     if (
       event == 'Stop' ||
@@ -458,9 +536,32 @@ export class ReportManageFilterComponent {
       return;
     }
 
+    const fromDate = new Date(formValue.fromDate);
+    const toDate = new Date(formValue.toDate);
+    if (!isReportDateRangeValid(fromDate, toDate)) {
+      this.validateReportDateRange();
+      this.openConfirmationModal({
+        title: 'Invalid Date Range',
+        content: getReportDateRangeErrorMessage(),
+        primaryActionLabel: 'Ok',
+        secondaryActionLabel: false,
+        onPrimaryAction: () => this.hideConfirmationModal(),
+      });
+      return;
+    }
+
     this.spinnerLoading = true;
     this.formValueData = formValue;
+    this.syncSelectedVehicles(this.reportForm.get('vehicle')?.value);
     let deviceData = this.selectedVehicles.map((val) => val.value);
+
+    if (!this.isMultiVehicleReport(formValue.filtername) && deviceData.length > 1) {
+      deviceData = [deviceData[0]];
+      this.selectedVehicles = [this.selectedVehicles[0]];
+      this.reportForm
+        .get('vehicle')
+        ?.setValue(this.selectedVehicles[0], { emitEvent: false });
+    }
 
     // Format dates with timezone as per reference project format: "2026-01-16T00:00:00+05:30"
     const formatDateWithTimezone = (date: Date): string => {
@@ -480,8 +581,6 @@ export class ReportManageFilterComponent {
       return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
     };
 
-    const fromDate = new Date(formValue.fromDate);
-    const toDate = new Date(formValue.toDate);
     const fromDateISO = formatDateWithTimezone(fromDate);
     const toDateISO = formatDateWithTimezone(toDate);
 
@@ -738,33 +837,72 @@ export class ReportManageFilterComponent {
     const reportType = this.reportTypeMapping[formValue.filtername];
 
     if (reportType) {
+      const useParallelFetch =
+        this.isMultiVehicleReport(formValue.filtername) && deviceData.length > 1;
+
+      const handleReportData = (reportData: any) => {
+        this.processReportData(reportData, formValue, type);
+      };
+
+      if (useParallelFetch) {
+        forkJoin(
+          deviceData.map((deviceId: string | number) =>
+            this.repotManageService
+              .allReportTypeDynamically(
+                this.buildPayloadForDevice(
+                  deviceId,
+                  formValue,
+                  fromDateISO,
+                  toDateISO
+                ),
+                reportType
+              )
+              .pipe(catchError(() => of({ error: true })))
+          )
+        )
+          .pipe(
+            tap((responses: any[]) => {
+              this.spinnerLoading = false;
+              const mergedData = this.mergeParallelResponses(responses);
+              handleReportData(mergedData);
+            }),
+            catchError((error) => {
+              this.spinnerLoading = false;
+              console.error('Report API error:', error);
+              this.data = this.getEmptyReportData(formValue.filtername);
+              this.ReportsDetails.setData(
+                this.data,
+                formValue.filtername,
+                formValue,
+                type,
+                this.isLocation
+              );
+              return of(null);
+            })
+          )
+          .subscribe();
+        return;
+      }
+
+      const singlePayload =
+        deviceData.length > 0
+          ? this.buildPayloadForDevice(
+              deviceData[0],
+              formValue,
+              fromDateISO,
+              toDateISO
+            )
+          : payload;
+
       this.repotManageService
-        .allReportTypeDynamically(payload, reportType)
+        .allReportTypeDynamically(singlePayload, reportType)
         .pipe(
           tap((res: any) => {
             this.spinnerLoading = false;
 
             // Handle error responses - show empty table instead of popup
             if (res?.error || (res?.body && res?.body?.result === false)) {
-              // Set empty data structure based on report type to show empty table
-              if (formValue.filtername === 'Stop' || formValue.filtername === 'Idle') {
-                this.data = { Points: [], TotalCount: 0 };
-              } else if (formValue.filtername === 'Trip Report' || formValue.filtername === 'Overspeed Report') {
-                this.data = { Points: [], TotalCount: 0 };
-              } else if (formValue.filtername === 'Movement Summary') {
-                this.data = { Vehicle: { VehicleNo: '' }, Result: [] };
-              } else if (formValue.filtername === 'GeoFence Report') {
-                this.data = [];
-              } else if (formValue.filtername === 'Distance') {
-                this.data = [];
-              } else if (formValue.filtername === 'Duration Report') {
-                this.data = [];
-              } else if (formValue.filtername === 'Distance vs Speed') {
-                this.data = [];
-              } else {
-                this.data = null;
-              }
-
+              this.data = this.getEmptyReportData(formValue.filtername);
               this.ReportsDetails.setData(
                 this.data,
                 formValue.filtername,
@@ -780,25 +918,7 @@ export class ReportManageFilterComponent {
 
             // Check if result is successful - show empty table instead of popup
             if (res?.body?.result === false || (res?.body?.result === undefined && !reportData)) {
-              // Set empty data structure based on report type to show empty table
-              if (formValue.filtername === 'Stop' || formValue.filtername === 'Idle') {
-                this.data = { Points: [], TotalCount: 0 };
-              } else if (formValue.filtername === 'Trip Report' || formValue.filtername === 'Overspeed Report') {
-                this.data = { Points: [], TotalCount: 0 };
-              } else if (formValue.filtername === 'Movement Summary') {
-                this.data = { Vehicle: { VehicleNo: '' }, Result: [] };
-              } else if (formValue.filtername === 'GeoFence Report') {
-                this.data = [];
-              } else if (formValue.filtername === 'Distance') {
-                this.data = [];
-              } else if (formValue.filtername === 'Duration Report') {
-                this.data = [];
-              } else if (formValue.filtername === 'Distance vs Speed') {
-                this.data = [];
-              } else {
-                this.data = null;
-              }
-
+              this.data = this.getEmptyReportData(formValue.filtername);
               this.ReportsDetails.setData(
                 this.data,
                 formValue.filtername,
@@ -809,6 +929,135 @@ export class ReportManageFilterComponent {
               return;
             }
 
+            handleReportData(reportData);
+          }),
+          catchError((error) => {
+            this.spinnerLoading = false;
+            console.error('Report API error:', error);
+            this.data = this.getEmptyReportData(this.formValueData?.filtername);
+            this.ReportsDetails.setData(
+              this.data,
+              this.formValueData?.filtername || null,
+              this.formValueData || null,
+              null,
+              this.isLocation
+            );
+            return of(null);
+          })
+        )
+        .subscribe();
+    }
+  }
+
+  private buildPayloadForDevice(
+    deviceId: string | number,
+    formValue: any,
+    fromDateISO: string,
+    toDateISO: string
+  ): any {
+    const useTimeFields =
+      formValue.filtername === 'Stop' ||
+      formValue.filtername === 'Idle' ||
+      formValue.filtername === 'Trip Report' ||
+      formValue.filtername === 'Overspeed Report' ||
+      formValue.filtername === 'GeoFence Report' ||
+      formValue.filtername === 'temperature Report' ||
+      formValue.filtername === 'Duration Report' ||
+      formValue.filtername === 'Movement Summary' ||
+      formValue.filtername === 'Distance vs Speed';
+
+    let payload: any = {
+      DeviceId: deviceId,
+      ...(useTimeFields
+        ? { FromTime: fromDateISO, ToTime: toDateISO }
+        : { FromDate: fromDateISO, ToDate: toDateISO }),
+      ...(this.durationcontrol && { SpeedLimit: formValue.speed }),
+    };
+
+    if (
+      formValue.filtername === 'Stop' ||
+      formValue.filtername === 'Idle' ||
+      formValue.filtername === 'Trip Report' ||
+      formValue.filtername === 'Overspeed Report' ||
+      formValue.filtername === 'temperature Report' ||
+      formValue.filtername === 'GeoFence Report' ||
+      formValue.filtername === 'Distance vs Speed'
+    ) {
+      payload['limit_count'] = 50000;
+      payload['page_num'] = 1;
+    } else if (formValue.filtername === 'Distance') {
+      if (formValue.customer) {
+        payload['CustomerId'] = formValue.customer;
+      }
+      payload['limit_count'] = this.tableSize;
+      payload['page_num'] = this.page;
+    } else if (formValue.filtername === 'Duration Report') {
+      payload['deviceId'] = [deviceId];
+      delete payload.DeviceId;
+    }
+
+    if (formValue.filtername === 'Movement Summary') {
+      return {
+        DeviceId: String(deviceId),
+        FromTime: fromDateISO,
+        ToTime: toDateISO,
+        MovementDuration: formValue.movement,
+      };
+    }
+
+    if (formValue.filtername === 'Distance vs Speed') {
+      return {
+        DeviceId: String(deviceId),
+        FromTime: fromDateISO,
+        ToTime: toDateISO,
+      };
+    }
+
+    if (formValue.filtername === 'GeoFence Report') {
+      return {
+        DeviceId: deviceId,
+        FromTime: fromDateISO,
+        ToTime: toDateISO,
+        limit_count: 50000,
+        page_num: 1,
+      };
+    }
+
+    return payload;
+  }
+
+  private mergeParallelResponses(responses: any[]): any[] {
+    return responses.flatMap((res) => {
+      if (res?.error || (res?.body && res?.body?.result === false)) {
+        return [];
+      }
+      const reportData = res?.body?.data || res?.body?.Data || res?.data;
+      return Array.isArray(reportData) ? reportData : reportData ? [reportData] : [];
+    });
+  }
+
+  private getEmptyReportData(filterName: string): any {
+    if (filterName === 'Stop' || filterName === 'Idle') {
+      return { Points: [], TotalCount: 0 };
+    }
+    if (filterName === 'Trip Report' || filterName === 'Overspeed Report') {
+      return { Points: [], TotalCount: 0 };
+    }
+    if (filterName === 'Movement Summary') {
+      return { Vehicle: { VehicleNo: '' }, Result: [] };
+    }
+    if (
+      filterName === 'GeoFence Report' ||
+      filterName === 'Distance' ||
+      filterName === 'Duration Report' ||
+      filterName === 'Distance vs Speed'
+    ) {
+      return [];
+    }
+    return null;
+  }
+
+  private processReportData(reportData: any, formValue: any, type: any): void {
             // Special case for Distance Report - transform data structure
             if (formValue.filtername === 'Distance') {
               if (!reportData || (Array.isArray(reportData) && reportData.length === 0)) {
@@ -1308,51 +1557,13 @@ export class ReportManageFilterComponent {
               this.data = reportData;
             }
 
-            // Set the data if available
-            this.ReportsDetails.setData(
-              this.data,
-              formValue.filtername,
-              formValue,
-              type,
-              this.isLocation
-            );
-          }),
-          catchError((error) => {
-            this.spinnerLoading = false;
-            console.error('Report API error:', error);
-
-            // Set empty data structure based on report type to show empty table
-            if (this.formValueData?.filtername === 'Stop' || this.formValueData?.filtername === 'Idle') {
-              this.data = { Points: [], TotalCount: 0 };
-            } else if (this.formValueData?.filtername === 'Trip Report' || this.formValueData?.filtername === 'Overspeed Report') {
-              this.data = { Points: [], TotalCount: 0 };
-            } else if (this.formValueData?.filtername === 'Movement Summary') {
-              this.data = { Vehicle: { VehicleNo: '' }, Result: [] };
-            } else if (this.formValueData?.filtername === 'GeoFence Report') {
-              this.data = [];
-            } else if (this.formValueData?.filtername === 'Distance') {
-              this.data = [];
-            } else if (this.formValueData?.filtername === 'Duration Report') {
-              this.data = [];
-            } else if (this.formValueData?.filtername === 'Distance vs Speed') {
-              this.data = [];
-            } else {
-              this.data = null;
-            }
-
-            this.ReportsDetails.setData(
-              this.data,
-              this.formValueData?.filtername || null,
-              this.formValueData || null,
-              null,
-              this.isLocation
-            );
-
-            return of(null);
-          })
-        )
-        .subscribe();
-    }
+    this.ReportsDetails.setData(
+      this.data,
+      formValue.filtername,
+      formValue,
+      type,
+      this.isLocation
+    );
   }
 
   openConfirmationModal(data = {}) {

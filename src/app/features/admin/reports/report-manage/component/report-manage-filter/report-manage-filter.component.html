@@ -57,41 +57,38 @@
             </div>
             <div class="col-md-2" *ngIf="!movementcontrol">
                 <label class="form-label">Vehicle</label>
-                <ng-select [items]="vehicleData" [clearSearchOnAdd]="true" [closeOnSelect]="false" labelForId="state"
-                    [multiple]="true" placeholder="Select Vehicle" clearAllText="Clear" formControlName="vehicle"
-                    [bindLabel]="'text'">
-                    <ng-template ng-option-tmp let-item="item" let-item$="item$" let-index="index">
-                        <div class=" ">
+                <ng-select
+                    [items]="vehicleData"
+                    formControlName="vehicle"
+                    [multiple]="allowMultipleVehicles"
+                    [closeOnSelect]="!allowMultipleVehicles"
+                    bindLabel="text"
+                    placeholder="Select Vehicle"
+                    clearAllText="Clear"
+                    (change)="onVehicleSelect($event)">
+                    <ng-template ng-option-tmp let-item="item" let-item$="item$" let-index="index" *ngIf="allowMultipleVehicles">
+                        <div>
                             <input id="item-{{index}}" type="checkbox" [ngModel]="item$.selected"
                                 [ngModelOptions]="{standalone: true}" />
-                            {{item['text']}}
+                            {{ item.text }}
                         </div>
                     </ng-template>
-                    <!-- <ng-template ng-multi-label-tmp let-items="items">
-
-                    </ng-template> -->
-                    <ng-select [items]="vehicleData" formControlName="vehicle" [multiple]="true" bindLabel="text"
-                        bindValue="value" placeholder="Select Vehicle" (change)="onVehicleSelect($event)"
-                        (remove)="removeVehicle($event)">
-
-                        <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
-
-                            <div class="ng-value" *ngIf="items.length === 1">
-                                <span class="ng-value-label" [title]="$any(items[0]).text">
-                                    {{ $any(items[0]).text.length > 15 ? ($any(items[0]).text | slice:0:15) + '...' :
-                                    $any(items[0]).text }}
-                                </span>
-                                <span class="ng-value-icon right" (click)="clear(items[0])" aria-hidden="true">×</span>
-                            </div>
-
-                            <div class="ng-value" *ngIf="items.length > 1">
-                                <span class="ng-value-label">{{ items.length }} Vehicles Selected</span>
-                            </div>
-
-                        </ng-template>
-
-                    </ng-select>
+                    <ng-template ng-multi-label-tmp let-items="items" let-clear="clear">
+                        <div class="ng-value" *ngIf="items.length === 1">
+                            <span class="ng-value-label" [title]="$any(items[0]).text">
+                                {{ $any(items[0]).text.length > 15 ? ($any(items[0]).text | slice:0:15) + '...' :
+                                $any(items[0]).text }}
+                            </span>
+                            <span class="ng-value-icon right" (click)="clear(items[0])" aria-hidden="true">×</span>
+                        </div>
+                        <div class="ng-value" *ngIf="items.length > 1">
+                            <span class="ng-value-label">{{ items.length }} Vehicles Selected</span>
+                        </div>
+                    </ng-template>
                 </ng-select>
+                <small class="text-muted" *ngIf="!allowMultipleVehicles && reportForm.get('filtername')?.value">
+                    Single vehicle only for this report
+                </small>
                 <div *ngIf="reportForm.get('vehicle')?.invalid && (reportForm.get('vehicle')?.dirty || reportForm.get('vehicle')?.touched)"
                     class="text-danger">
                     Vehicle is required
@@ -110,6 +107,7 @@
 
             <div class="col-md-2">
                 <label for="exampleInputEmail1" class="form-label">Time Format</label>
+                <small class="text-muted d-block">Max 7 days per report</small>
                 <ng-select placeholder="Select Time Duration" formControlName="timeformat" (change)="timecheck($event)">
                     <ng-option *ngFor="let item of selectDate" [value]="item?.dateValue">
                         {{item?.dateValue}}
@@ -174,7 +172,8 @@
                 </mat-form-field>
                 <div *ngIf="reportForm.get('toDate')?.invalid && (reportForm.get('toDate')?.dirty || reportForm.get('toDate')?.touched)"
                     class="text-danger">
-                    To Date is required
+                    <span *ngIf="reportForm.get('toDate')?.hasError('required')">To Date is required</span>
+                    <span *ngIf="reportForm.get('toDate')?.hasError('maxRange')">Date range cannot exceed 7 days</span>
                 </div>
             </div>
             <div class="col-md-2 mt-2">

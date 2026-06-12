@@ -46,8 +46,8 @@
         </div>
 
         <div class="vehicle-list" *ngIf="!movementcontrol">
-            <ng-select [items]="vehicleData" [clearSearchOnAdd]="true" [closeOnSelect]="false" labelForId="state"
-                [multiple]="true" placeholder="Select Vehicle" clearAllText="Clear" formControlName="vehicle"
+            <ng-select [items]="vehicleData" [clearSearchOnAdd]="true" [closeOnSelect]="!isMultiple" labelForId="state"
+                [multiple]="isMultiple" placeholder="Select Vehicle" clearAllText="Clear" formControlName="vehicle"
                 [bindLabel]="'text'">
                 <ng-template ng-option-tmp let-item="item" let-item$="item$" let-index="index">
                     <div class=" ">
@@ -67,6 +67,7 @@
 
         </div>
         <div class="default">
+            <small class="text-muted d-block">Max 7 days per report</small>
             <ng-select placeholder="Select default days" formControlName="timeformat" (change)="timecheck($event)">
                 <ng-option *ngFor="let item of selectDate" [value]="item?.dateValue">
                     {{item?.dateValue}}
@@ -99,7 +100,8 @@
                     </mat-form-field>
                     <div *ngIf="filterForm.get('toDate')?.invalid && (filterForm.get('toDate')?.dirty || filterForm.get('toDate')?.touched)"
                         class="text-danger">
-                        To Date is required
+                        <span *ngIf="filterForm.get('toDate')?.hasError('required')">To Date is required</span>
+                        <span *ngIf="filterForm.get('toDate')?.hasError('maxRange')">Date range cannot exceed 7 days</span>
                     </div>
                 </div>
             </div>

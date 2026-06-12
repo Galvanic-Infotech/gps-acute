@@ -7,12 +7,16 @@ import { ReportService } from '../../../services/report.service';
 import { ReportsDetailsComponent } from '../reports-details/reports-details.component';
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
 import { ConfirmationDialogComponent } from 'src/app/features/shared/components/confirmation-dialog/confirmation-dialog.component';
-import { catchError, of, tap } from 'rxjs';
+import { catchError, forkJoin, of, tap } from 'rxjs';
 import { NgxMatDatetimePicker } from '@angular-material-components/datetime-picker';
 import { MatDatepicker } from '@angular/material/datepicker';
 import { DashboardService } from 'src/app/features/users/dashboard/dashboard-summary/services/dashboard.service';
 import { API_CONSTANTS } from 'src/app/features/shared/constant/API-CONSTANTS';
 import { buildDistanceVsSpeedRows } from 'src/app/features/shared/utils/distance-vs-speed.util';
+import {
+  getReportDateRangeErrorMessage,
+  isReportDateRangeValid,
+} from 'src/app/features/shared/utils/report-date-range.util';
 
 @Component({
   selector: 'reports-filter',
@@ -255,6 +259,7 @@ export class ReportsFilterComponent {
       }
       alertControl?.updateValueAndValidity();
 
+      this.updateVehicleSelectMode(value);
     });
     this.filterForm.get('timeformat')?.valueChanges.subscribe((value) => {
       if (value === 'Custom') {
@@ -273,12 +278,6 @@ export class ReportsFilterComponent {
           case 'Weekly':
             newFromDate.setDate(currentDate.getDate() - 7);
             break;
-          case '15 Days':
-            newFromDate.setDate(currentDate.getDate() - 15);
-            break;
-          case '30 Days':
-            newFromDate.setDate(currentDate.getDate() - 30);
-            break;
           default:
             break;
         }
@@ -288,9 +287,15 @@ export class ReportsFilterComponent {
     });
 
     this.filterForm.get('vehicle')?.valueChanges.subscribe((value) => {
-      this.selectedVehicles = value;
-    })
+      this.syncSelectedVehicles(value);
+    });
 
+    this.filterForm.get('fromDate')?.valueChanges.subscribe(() => {
+      this.validateReportDateRange();
+    });
+    this.filterForm.get('toDate')?.valueChanges.subscribe(() => {
+      this.validateReportDateRange();
+    });
 
     if (this.vehicleStateData?.value && this.vehicleStateData?.text) {
       this.filterForm.patchValue({
@@ -303,11 +308,46 @@ export class ReportsFilterComponent {
   onVehicleSelect(event: any){
 
   }
+
+  private validateReportDateRange(): boolean {
+    const from = this.filterForm.get('fromDate')?.value;
+    const to = this.filterForm.get('toDate')?.value;
+    const toControl = this.filterForm.get('toDate');
+    if (!from || !to || !toControl) {
+      return true;
+    }
+
+    const valid = isReportDateRangeValid(new Date(from), new Date(to));
+    const errors = { ...(toControl.errors || {}) };
+
+    if (!valid) {
+      errors['maxRange'] = true;
+      toControl.setErrors(errors);
+    } else if (errors['maxRange']) {
+      delete errors['maxRange'];
+      toControl.setErrors(Object.keys(errors).length ? errors : null);
+    }
+
+    return valid;
+  }
+
   spinnerLoading: boolean = false;
 
   submit(formValue: any, type: any) {    
     if (this.filterForm.invalid) {
       this.filterForm.markAllAsTouched();
+      return;
+    }
+
+    if (!isReportDateRangeValid(new Date(formValue.fromDate), new Date(formValue.toDate))) {
+      this.validateReportDateRange();
+      this.openConfirmationModal({
+        title: 'Invalid Date Range',
+        content: getReportDateRangeErrorMessage(),
+        primaryActionLabel: 'Ok',
+        secondaryActionLabel: false,
+        onPrimaryAction: () => this.hideConfirmationModal(),
+      });
       return;
     }
 
@@ -318,7 +358,16 @@ export class ReportsFilterComponent {
     this.spinnerLoading = true;
     let payload: any;
     let service: any;
-    let deviceData = this.selectedVehicles.map((val) => val.value)
+    this.syncSelectedVehicles(this.filterForm.get('vehicle')?.value);
+    let deviceData = this.selectedVehicles.map((val) => val.value);
+
+    if (!this.isMultiVehicleReport(formValue.filtername) && deviceData.length > 1) {
+      deviceData = [deviceData[0]];
+      this.selectedVehicles = [this.selectedVehicles[0]];
+      this.filterForm
+        .get('vehicle')
+        ?.setValue(this.selectedVehicles[0], { emitEvent: false });
+    }
 
     const formatDateWithTimezone = (date: Date): string => {
       const year = date.getFullYear();
@@ -399,15 +448,10 @@ export class ReportsFilterComponent {
     };
 
     const reportType = this.reportTypeMapping[formValue.filtername];
-    service = this.reportService.allReportTypeDynamically(payload, reportType);
-    if (reportType == 'Alert') {
-      payload['alert_type'] = formValue.alertId;
-      service = this.reportService.alertReport(payload);
-    }
-    if (reportType) {
-      service
-        .pipe(
-          tap((res: any) => {
+    const useParallelFetch =
+      this.isMultiVehicleReport(formValue.filtername) && deviceData.length > 1;
+
+    const handleResponse = (res: any) => {
             this.spinnerLoading = false;
 
             if (res?.error?.ResponseMessage === 'Failed') {
@@ -508,8 +552,82 @@ export class ReportsFilterComponent {
               type,
               this.isLocation
             );
+    };
+
+    const buildPayloadForDevice = (deviceId: string | number) => {
+      if (formValue.filtername === 'Distance vs Speed') {
+        return {
+          DeviceId: String(deviceId),
+          FromTime: fromTime,
+          ToTime: toTime,
+        };
+      }
+      const devicePayload: any = {
+        DeviceID: [deviceId],
+        FromTime: fromTime,
+        ToTime: toTime,
+        ...(this.durationcontrol && { SpeedLimit: formValue.speed }),
+      };
+      if (
+        formValue.filtername == 'Speed Report' ||
+        formValue.filtername == 'Overspeed Report' ||
+        formValue.filtername == 'Trip Report' ||
+        formValue.filtername == 'Stop Report' ||
+        formValue.filtername == 'Stop' ||
+        formValue.filtername == 'Idle' ||
+        formValue.filtername === 'GeoFence Report'
+      ) {
+        devicePayload['limit_count'] = this.tableSize;
+        devicePayload['page_num'] = this.page;
+      }
+      return devicePayload;
+    };
+
+    if (reportType && useParallelFetch) {
+      forkJoin(
+        deviceData.map((deviceId: string | number) =>
+          this.reportService
+            .allReportTypeDynamically(buildPayloadForDevice(deviceId), reportType)
+            .pipe(catchError(() => of({ error: true })))
+        )
+      )
+        .pipe(
+          tap((responses: any[]) => {
+            const mergedData = responses.flatMap((res) => {
+              if (res?.error || res?.error?.ResponseMessage === 'Failed') {
+                return [];
+              }
+              const data = res?.body?.Result?.Data;
+              return Array.isArray(data) ? data : data ? [data] : [];
+            });
+            handleResponse({ body: { Result: { Data: mergedData } } });
           }),
+          catchError(() => {
+            this.spinnerLoading = false;
+            this.ReportsDetails.setData(null, null, null, null, null);
+            return of(null);
+          })
+        )
+        .subscribe();
+      return;
+    }
+
+    payload =
+      deviceData.length > 0 && formValue.filtername !== 'Distance vs Speed'
+        ? buildPayloadForDevice(deviceData[0])
+        : payload;
+
+    service = this.reportService.allReportTypeDynamically(payload, reportType);
+    if (reportType == 'Alert') {
+      payload['alert_type'] = formValue.alertId;
+      service = this.reportService.alertReport(payload);
+    }
+    if (reportType) {
+      service
+        .pipe(
+          tap((res: any) => handleResponse(res)),
           catchError((error) => {
+            this.spinnerLoading = false;
             return of(null);
           })
         )
@@ -538,17 +656,52 @@ export class ReportsFilterComponent {
     });
   }
 
+  readonly multiVehicleReportTypes = new Set([
+    'Distance',
+    'Idle',
+    'Trip Report',
+    'Overspeed Report',
+    'GeoFence Report',
+  ]);
+
+  isMultiVehicleReport(reportName: string): boolean {
+    return this.multiVehicleReportTypes.has(reportName);
+  }
+
+  private normalizeSelectedVehicles(value: any): any[] {
+    if (!value) {
+      return [];
+    }
+    return Array.isArray(value) ? value : [value];
+  }
+
+  private syncSelectedVehicles(value: any): void {
+    let vehicles = this.normalizeSelectedVehicles(value);
+    if (!this.isMultiple && vehicles.length > 1) {
+      vehicles = [vehicles[vehicles.length - 1]];
+      this.filterForm
+        .get('vehicle')
+        ?.setValue(this.isMultiple ? vehicles : vehicles[0], { emitEvent: false });
+    }
+    this.selectedVehicles = vehicles;
+  }
+
+  private updateVehicleSelectMode(reportName: string): void {
+    this.isMultiple = this.isMultiVehicleReport(reportName);
+    if (!this.isMultiple) {
+      const vehicles = this.normalizeSelectedVehicles(
+        this.filterForm.get('vehicle')?.value
+      );
+      if (vehicles.length > 1) {
+        const single = vehicles[0];
+        this.selectedVehicles = [single];
+        this.filterForm.get('vehicle')?.setValue(single, { emitEvent: false });
+      }
+    }
+  }
+
   onItemSelect(event: any) {
-    this.isMultiple = false;
-    this.isMultiple = [
-      'Distance',
-      'Duration Report',
-      'temperature Report',
-      'Trip Report',
-      'Stop',
-      'Idle',
-      'GeoFence Report',
-    ].includes(event);
+    this.updateVehicleSelectMode(event);
     this.filterType = event
     if (event === 'Speed Report' || event === 'Overspeed Report') {
       this.durationcontrol = true;
