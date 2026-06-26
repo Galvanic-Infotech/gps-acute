@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, catchError, map, Subject, take, tap, throwError } from 'rxjs';
@@ -153,8 +153,25 @@ export class TokenService {
   
     return service.pipe(
       tap((res: any) => {
-        const response = res.body;
         this.isLoginClick = false;
+
+        if (res instanceof HttpErrorResponse) {
+          const errorBody = res.error;
+          if (errorBody?.result === false && errorBody?.data) {
+            this.NotificationService.showError(errorBody.data);
+          } else if (errorBody?.StatusCode === 404) {
+            this.NotificationService.showError(errorBody?.Error?.Data);
+          } else if (errorBody?.StatusCode === 500) {
+            this.NotificationService.showError('An unexpected error occurred on the server. Please try again later.');
+          } else if (!navigator.onLine) {
+            this.NotificationService.showError('You are offline. Please check your internet connection.');
+          } else {
+            this.NotificationService.showError('An unknown error occurred. Please try again later.');
+          }
+          return;
+        }
+
+        const response = res.body;
   
         if (response?.result === true && response?.data) {
           // Token already includes "Bearer " prefix from the API
@@ -195,6 +212,8 @@ export class TokenService {
 
           // Initialize the user switch root session
           this.userSwitchService.initRootSession();
+        } else if (response?.result === false) {
+          this.NotificationService.showError(response?.data || 'Login failed. Please try again.');
         }
       }),
       catchError((error: any) => {
