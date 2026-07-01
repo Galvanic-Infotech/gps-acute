@@ -90,7 +90,7 @@ export class ViewLinkedUsersComponent {
 
     this.deviceManageService.unlinkMapping(payload).subscribe((res: any) => {
       this.unlinkingId = null;
-      const success = res?.body?.result ?? res?.result ?? (res?.status === 200 || res?.status === 201);
+      const success = res?.body?.result ?? res?.result ?? (res?.status === 200 || res?.status === 201 || res?.status === 204);
       if (success) {
         this.notificationService.showSuccess('User unlinked successfully');
         this.loadLinkedUsers();
