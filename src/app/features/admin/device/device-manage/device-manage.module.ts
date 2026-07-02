@@ -39,6 +39,7 @@ import { LinkUserComponent } from './component/device/link-user/link-user.compon
 import { ViewLinkedUsersComponent } from './component/device/view-linked-users/view-linked-users.component';
 import { UnlinkConfirmModalComponent } from './component/device/unlink-confirm-modal/unlink-confirm-modal.component';
 import { LinkPlanComponent } from './component/device/link-plan/link-plan.component';
+import { BulkLinkUserComponent } from './component/device/bulk-link-user/bulk-link-user.component';
 import { UpdateRechargeComponent } from './component/device/update-recharge/update-recharge.component';
 
 
@@ -79,6 +80,7 @@ import { UpdateRechargeComponent } from './component/device/update-recharge/upda
     ViewLinkedUsersComponent,
     UnlinkConfirmModalComponent,
     LinkPlanComponent,
+    BulkLinkUserComponent,
     UpdateRechargeComponent,
   ],
   imports: [

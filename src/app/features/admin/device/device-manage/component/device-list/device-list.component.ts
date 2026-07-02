@@ -21,6 +21,7 @@ import { RefreshpageService } from 'src/app/features/http-services/refreshpage.s
 import { LinkUserComponent } from '../device/link-user/link-user.component';
 import { ViewLinkedUsersComponent } from '../device/view-linked-users/view-linked-users.component';
 import { LinkPlanComponent } from '../device/link-plan/link-plan.component';
+import { BulkLinkUserComponent } from '../device/bulk-link-user/bulk-link-user.component';
 import { UpdateRechargeComponent } from '../device/update-recharge/update-recharge.component';
 
 
@@ -601,6 +602,29 @@ export class DeviceListComponent {
       LinkPlanComponent,
       Object.assign(initialState, { class: 'modal-md modal-dialog-centered' })
     );
+  }
+
+  openBulkLinkUser() {
+    if (!this.selectedRows || this.selectedRows.length === 0) {
+      this.notificationService.showError('Please select at least one device');
+      return;
+    }
+
+    const initialState: ModalOptions = {
+      initialState: {
+        selectedDevices: this.selectedRows
+      }
+    };
+    this.bsModelRef = this.bsmodelService.show(
+      BulkLinkUserComponent,
+      Object.assign(initialState, { class: 'modal-md modal-dialog-centered' })
+    );
+
+    this.bsModelRef?.content?.mapdata?.subscribe((value: any) => {
+      if (value?.success === true) {
+        this.refreshCustomerService.announceCustomerAdded();
+      }
+    });
   }
 
   viewLinkedUsers(device: any) {

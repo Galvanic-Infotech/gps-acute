@@ -1,0 +1,39 @@
+<div class="modal-header">
+  <h5 class="modal-title">Link User to Devices</h5>
+  <button type="button" class="close" (click)="cancel()">
+    <span>&times;</span>
+  </button>
+</div>
+
+<div class="modal-body">
+  <div class="selected-devices-info">
+    <strong>Selected Devices ({{ selectedDevices.length }}):</strong>
+    <div class="device-chips">
+      <span class="chip" *ngFor="let device of selectedDevices">
+        {{ device?.vehicleNo || device?.deviceUid || device?.deviceId || 'N/A' }}
+      </span>
+    </div>
+  </div>
+
+  <div class="form-group mt-3">
+    <label>Select User</label>
+    <input type="text" class="form-control mb-2" placeholder="Search by Mobile No, Login ID or Name..."
+      [(ngModel)]="searchTerm" (input)="applySearch()" [disabled]="isLoadingUsers">
+    <select class="form-control" [(ngModel)]="selectedUserId" [disabled]="isLoadingUsers || filteredUserList.length === 0">
+      <option [ngValue]="null" disabled>-- Select User --</option>
+      <option *ngFor="let user of filteredUserList" [ngValue]="user.id">
+        {{ user.loginId || 'N/A' }} - {{ user.userName || 'N/A' }} ({{ getUserTypeLabel(user.userType) }})
+      </option>
+    </select>
+    <div *ngIf="isLoadingUsers" class="loading-text">Loading users...</div>
+    <div *ngIf="!isLoadingUsers && filteredUserList.length === 0" class="loading-text">No users available</div>
+  </div>
+</div>
+
+<div class="modal-footer">
+  <button class="btn btn-secondary" (click)="cancel()" [disabled]="isSubmitting">Cancel</button>
+  <button class="btn btn-primary" (click)="linkUserToDevices()" [disabled]="isSubmitting || !selectedUserId">
+    <span *ngIf="isSubmitting">Linking...</span>
+    <span *ngIf="!isSubmitting">Link User</span>
+  </button>
+</div>
