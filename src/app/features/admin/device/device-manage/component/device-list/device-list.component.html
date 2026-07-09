@@ -12,9 +12,14 @@
                 </div>
 
                 <div class="row mb-3" *ngIf="deviceData && deviceData.length > 0">
-                    <div class="col-md-12">
+                    <div class="col-md-9">
                         <input type="text" class="form-control" placeholder="Search by Vehicle No, Device ID or Sim No..."
                             [(ngModel)]="searchTerm" (input)="applySearch()">
+                    </div>
+                    <div class="col-md-3 text-end">
+                        <button class="btn btn-success w-100" (click)="exportToExcel()">
+                            <i class="fa fa-file-excel"></i> Export to Excel
+                        </button>
                     </div>
                 </div>
 

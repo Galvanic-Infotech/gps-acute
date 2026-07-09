@@ -23,6 +23,7 @@ import { ViewLinkedUsersComponent } from '../device/view-linked-users/view-linke
 import { LinkPlanComponent } from '../device/link-plan/link-plan.component';
 import { BulkLinkUserComponent } from '../device/bulk-link-user/bulk-link-user.component';
 import { UpdateRechargeComponent } from '../device/update-recharge/update-recharge.component';
+import * as XLSX from 'xlsx';
 
 
 @Component({
@@ -244,6 +245,53 @@ export class DeviceListComponent {
     this.page = 1;
     this.selectAll = false;
     this.selectedRows = [];
+  }
+
+  exportToExcel() {
+    const dataToExport = (this.filteredDeviceData && this.filteredDeviceData.length > 0)
+      ? this.filteredDeviceData
+      : this.deviceData;
+
+    if (!dataToExport || dataToExport.length === 0) {
+      this.notificationService.showError('No data available to export');
+      return;
+    }
+
+    const rows = dataToExport.map((device: any) => ({
+      'Vehicle No': device?.vehicleNo || '',
+      'Device ID': device?.deviceId || '',
+      'Device IMEI': device?.deviceImei || '',
+      'Device UID': device?.deviceUid || '',
+      'Description': device?.description || '',
+      'Device Type': this.getDeviceTypeName(device?.fkDeviceType),
+      'Sim Operator': device?.fkSimOperator ?? '',
+      'Secondary Sim Operator': device?.fkSecSimOperator ?? '',
+      'Vehicle Type': device?.fkVehicleType ?? '',
+      'Primary Sim No.': device?.simPhoneNumber || '',
+      'Secondary Sim No.': device?.simSecPhoneNumber || '',
+      'Installation On': this.formatExcelDate(device?.installationOn),
+      'Creation Time': this.formatExcelDate(device?.creationTime),
+      'Last Update On': this.formatExcelDate(device?.lastUpdateOn),
+      'Validity Installation On': this.formatExcelDate(device?.validity?.installationOn),
+      'Next Recharge Date': this.formatExcelDate(device?.validity?.nextRechargeDate),
+      'Customer Recharge Date': this.formatExcelDate(device?.validity?.customerRechargeDate),
+    }));
+
+    const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(rows);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Device List');
+    const fileName = `Device List ${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  }
+
+  private formatExcelDate(value: any): string {
+    if (!value) return '';
+    const date = new Date(value);
+    if (isNaN(date.getTime())) return value;
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
   }
 
   /**
