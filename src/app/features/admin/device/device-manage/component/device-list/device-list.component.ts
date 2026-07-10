@@ -243,8 +243,8 @@ export class DeviceListComponent {
     }
     this.count = this.filteredDeviceData.length;
     this.page = 1;
-    this.selectAll = false;
-    this.selectedRows = [];
+    this.selectAll = this.filteredDeviceData.length > 0 && this.filteredDeviceData.every((row: any) => row.selected);
+    this.updateSelectedRows();
   }
 
   exportToExcel() {
@@ -613,11 +613,8 @@ export class DeviceListComponent {
   }
 
   updateSelectedRows() {
-    if (this.selectAll) {
-      this.selectedRows = [...this.filteredDeviceData];
-    } else {
-      this.selectedRows = this.filteredDeviceData?.filter((row: any) => row.selected) || [];
-    }
+    // Keep selections across search — read from full list, not just filtered view
+    this.selectedRows = this.deviceData?.filter((row: any) => row.selected) || [];
   }
 
   openUpdateRecharge(device: any) {

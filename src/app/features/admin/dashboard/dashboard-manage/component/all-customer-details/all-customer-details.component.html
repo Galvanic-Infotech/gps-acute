@@ -65,13 +65,10 @@
                       currentPage: page,
                       totalItems: count}">
                     <td><img class="vehicle-image" [src]="onCheckVehicleDevice(row)" alt="" /></td>
-                    <td>{{ row?.Customer?.CustomerName }}</td>
-                    <td>{{ row?.Customer?.ContactNumber }}</td>
                     <td>{{ row?.Device?.InstallationDate | date : "yyyy-MM-dd" }}</td>
                     <td>{{ row?.PointValidity?.NextRechargeDue | date : "yyyy-MM-dd" }}</td>
                     <td>{{ row?.PointValidity?.CustomerRechargeDue | date : "yyyy-MM-dd" }}</td>
                     <td>{{ row?.Device?.VehicleNo }}</td>
-                    <td>{{ row?.Device?.DeviceTypeMeta?.Name }}</td>
                     <td>{{ row?.Device?.DeviceId }}</td>
                     <td>{{ row?.Device?.DeviceImei }}</td>
                     <td>{{ row?.Device?.SimPhoneNumber }}</td>

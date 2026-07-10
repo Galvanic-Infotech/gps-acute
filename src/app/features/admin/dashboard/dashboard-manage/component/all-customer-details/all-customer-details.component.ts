@@ -49,13 +49,10 @@ export class AllCustomerDetailsComponent {
   setInitialValue() {
     this.columns = [
       { key: '', title: 'Status' },
-      { key: '', title: 'Customer' },
-      { key: '', title: 'Mobile No.' },
       { key: '', title: 'Installation' },
       { key: '', title: 'Point Recharge' },
       { key: '', title: 'Customer Recharge' },
       { key: '', title: 'Vehicle No' },
-      { key: '', title: 'Type' },
       { key: '', title: 'DeviceId' },
       { key: '', title: 'IMEI' },
       { key: '', title: 'SIM Phone' },
@@ -159,7 +156,14 @@ export class AllCustomerDetailsComponent {
         VehicleNo: device?.vehicleNo || device?.VehicleNo || '',
         DeviceId: device?.deviceId || device?.DeviceId || device?.deviceUid || '',
         DeviceImei: device?.deviceImei || device?.DeviceImei || device?.deviceId || '',
-        SimPhoneNumber: device?.simPhoneNumber || device?.SimPhoneNumber || '',
+        SimPhoneNumber:
+          device?.primaryNo ||
+          device?.PrimaryNo ||
+          item?.primaryNo ||
+          item?.PrimaryNo ||
+          device?.simPhoneNumber ||
+          device?.SimPhoneNumber ||
+          '',
         InstallationDate:
           device?.installationOn ||
           device?.InstallationDate ||
@@ -424,13 +428,10 @@ export class AllCustomerDetailsComponent {
     const rows = this.getFilteredRows() || [];
     this.excelData = rows.map((item: any) => {
       return {
-        Customer: item?.Customer?.CustomerName,
-        'Mobile No.': item?.Customer?.ContactNumber,
         Installation: this.formatDate(item?.Device?.InstallationDate),
         'Point Recharge': this.formatDate(item?.PointValidity?.NextRechargeDue),
         'Customer Recharge': this.formatDate(item?.PointValidity?.CustomerRechargeDue),
         'Vehicle No': item?.Device?.VehicleNo,
-        Type: item?.Device?.DeviceTypeMeta?.Name,
         DeviceId: item?.Device?.DeviceId,
         IMEI: item?.Device?.DeviceImei,
         'SIM Phone': item?.Device?.SimPhoneNumber,
