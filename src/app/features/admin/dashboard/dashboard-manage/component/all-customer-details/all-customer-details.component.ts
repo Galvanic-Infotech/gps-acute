@@ -1,7 +1,6 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { BsModalService } from 'ngx-bootstrap/modal';
-import { StorageService } from 'src/app/features/http-services/storage.service';
 import * as XLSX from 'xlsx';
 import { DatePipe } from '@angular/common';
 
@@ -12,42 +11,40 @@ import { DatePipe } from '@angular/common';
 })
 export class AllCustomerDetailsComponent {
   @ViewChild('TABLE', { static: false }) table: ElementRef | any;
-  resellerDetails: any;
   selectDealer: any;
-  resellerData: any;
+  resellerData: any = {
+    All: 0,
+    Stop: 0,
+    Idle: 0,
+    Running: 0,
+    Offline: 0,
+    NoData: 0,
+  };
   page = 1;
   count = 0;
   tableSize = 100;
   tableSizes = [50, 100, 250, 500, 1000];
   type = 'All';
   columns: any;
-  resellerValue: any;
+  resellerValue: any[] = [];
+  allVehicles: any[] = [];
   dealerName: any;
-  userDetail: any;
   selectedType: any;
   excelData: any;
-  expiredCount: any;
-  expiredSoon: any;
-  spinnerLoading:boolean = false;
+  noDataCount: any[] = [];
+  searchKeyword: string = '';
+  spinnerLoading = false;
 
   constructor(
     private adminDashboardService: AdminDashboardService,
     private bsModalService: BsModalService,
-    private storageService: StorageService,
     private datePipe: DatePipe
   ) {}
 
   ngOnInit() {
     this.setInitialValue();
-    this.getResellerData();
-    if (this.selectedType == 'Overview') {
-      this.getUserDetail();
-    } else {
-      this.getSelectReseller(1, 'All');
-    }
+    this.loadVehicleList();
   }
-
-  ngOnChanges() {}
 
   setInitialValue() {
     this.columns = [
@@ -66,72 +63,201 @@ export class AllCustomerDetailsComponent {
     ];
   }
 
-  getUserDetail() {
-    this.storageService.getItem('userDetail').subscribe((res) => {
-      this.userDetail = res;
-      this.selectDealer = this.userDetail?.dealerId;
-      this.getSelectResellerOverview(1, 'All');
-      this.getResellerDataOverview();
+  loadVehicleList() {
+    this.spinnerLoading = true;
+    this.adminDashboardService.vehicleList().subscribe({
+      next: (res: any) => {
+        this.spinnerLoading = false;
+        const rawData = this.extractVehicleList(res);
+        this.allVehicles = rawData.map((item: any) => this.mapVehicleRow(item));
+        this.updateStatusCounts();
+        this.applyStatusFilter('All');
+      },
+      error: () => {
+        this.spinnerLoading = false;
+        this.allVehicles = [];
+        this.resellerValue = [];
+        this.updateStatusCounts();
+      },
     });
   }
 
-  getResellerData() {
-    this.adminDashboardService
-      .allReseller(this.selectDealer)
-      .subscribe((res: any) => {
-        this.resellerData = res?.body?.Result?.Data;
-      });
+  private extractVehicleList(res: any): any[] {
+    if (res?.body?.result === true && res?.body?.data) {
+      return Array.isArray(res.body.data) ? res.body.data : [res.body.data];
+    }
+    if (Array.isArray(res?.body)) {
+      return res.body;
+    }
+    if (Array.isArray(res?.body?.data)) {
+      return res.body.data;
+    }
+    if (Array.isArray(res?.body?.Result?.Data)) {
+      return res.body.Result.Data;
+    }
+    return [];
   }
 
-  getResellerDataOverview() {
-    this.adminDashboardService
-      .allResellerCount(this.userDetail?.dealerId, this.userDetail?.role)
-      .subscribe((res: any) => {
-        this.resellerData = res?.body?.Result?.Data;
-      });
+  private mapVehicleRow(item: any) {
+    // Already in old VehicleList/Reseller format
+    if (item?.Device || item?.Customer) {
+      const status = this.resolveLegacyStatus(item);
+      return {
+        ...item,
+        Status: status.Status,
+        SubStatus: status.SubStatus,
+        neverConnected: status.neverConnected,
+        statusKey: status.statusKey,
+      };
+    }
+
+    const statusStr = (item?.position?.status?.status || 'offline').toLowerCase();
+    const statusMap: any = {
+      running: { Status: 1, SubStatus: 1, statusKey: 'Running' },
+      stop: { Status: 1, SubStatus: 2, statusKey: 'Stop' },
+      dormant: { Status: 1, SubStatus: 3, statusKey: 'Idle' },
+      idle: { Status: 1, SubStatus: 3, statusKey: 'Idle' },
+      offline: { Status: 0, SubStatus: 0, statusKey: 'Offline' },
+      'never connected': { Status: 0, SubStatus: 0, statusKey: 'NoData', neverConnected: true },
+      'point expired': { Status: 0, SubStatus: 0, statusKey: 'Offline' },
+    };
+    const statusInfo = statusMap[statusStr] || { Status: 0, SubStatus: 0, statusKey: 'Offline' };
+    const neverConnected = statusStr === 'never connected' || statusInfo.neverConnected === true;
+    const lastUpdate =
+      item?.position?.deviceTime ||
+      item?.position?.servertime ||
+      item?.position?.serverTime ||
+      null;
+
+    const customer = item?.customer || item?.Customer || {};
+    const device = item?.device || {};
+    const validity = item?.validity || {};
+    const deviceType =
+      device?.deviceTypeMeta?.name ||
+      device?.DeviceTypeMeta?.Name ||
+      device?.deviceTypeName ||
+      device?.typeName ||
+      device?.fkDeviceType ||
+      '';
+
+    return {
+      Customer: {
+        CustomerName:
+          customer?.customerName ||
+          customer?.CustomerName ||
+          customer?.name ||
+          customer?.Name ||
+          '',
+        ContactNumber:
+          customer?.contactNumber ||
+          customer?.ContactNumber ||
+          customer?.mobile ||
+          customer?.Mobile ||
+          '',
+      },
+      Device: {
+        VehicleNo: device?.vehicleNo || device?.VehicleNo || '',
+        DeviceId: device?.deviceId || device?.DeviceId || device?.deviceUid || '',
+        DeviceImei: device?.deviceImei || device?.DeviceImei || device?.deviceId || '',
+        SimPhoneNumber: device?.simPhoneNumber || device?.SimPhoneNumber || '',
+        InstallationDate:
+          device?.installationOn ||
+          device?.InstallationDate ||
+          validity?.installationOn ||
+          null,
+        VehicleType: device?.vehicleType || device?.VehicleType || device?.fkVehicleType || 0,
+        DeviceTypeMeta: { Name: deviceType },
+        Id: device?.id || device?.Id || 0,
+      },
+      PointValidity: {
+        NextRechargeDue: validity?.nextRechargeDate || validity?.NextRechargeDue || null,
+        CustomerRechargeDue:
+          validity?.customerRechargeDate || validity?.CustomerRechargeDue || null,
+      },
+      Eventdata: {
+        Timestamp: lastUpdate,
+        Latitude: item?.position?.latitude || 0,
+        Longitude: item?.position?.longitude || 0,
+        Speed: item?.position?.speed || 0,
+      },
+      Status: statusInfo.Status,
+      SubStatus: statusInfo.SubStatus,
+      neverConnected,
+      statusKey: neverConnected ? 'NoData' : statusInfo.statusKey,
+      StatusDuration: item?.position?.status?.duration || '',
+      _original: item,
+    };
   }
 
-  getSelectReseller(value: any, type: any) {
-    this.spinnerLoading = true
+  private resolveLegacyStatus(item: any) {
+    if (item?.Status === 1 && item?.SubStatus === 1) {
+      return { Status: 1, SubStatus: 1, statusKey: 'Running', neverConnected: false };
+    }
+    if (item?.Status === 1 && item?.SubStatus === 2) {
+      return { Status: 1, SubStatus: 2, statusKey: 'Stop', neverConnected: false };
+    }
+    if (item?.Status === 1 && item?.SubStatus === 3) {
+      return { Status: 1, SubStatus: 3, statusKey: 'Idle', neverConnected: false };
+    }
+    const duration = item?.StatusDuration || '';
+    if (item?.Status === 0 && (!duration || String(duration).startsWith('Never'))) {
+      return { Status: 0, SubStatus: 0, statusKey: 'NoData', neverConnected: true };
+    }
+    return { Status: 0, SubStatus: 0, statusKey: 'Offline', neverConnected: false };
+  }
+
+  private updateStatusCounts() {
+    const running = this.allVehicles.filter((v) => v.statusKey === 'Running');
+    const stop = this.allVehicles.filter((v) => v.statusKey === 'Stop');
+    const idle = this.allVehicles.filter((v) => v.statusKey === 'Idle');
+    const offline = this.allVehicles.filter((v) => v.statusKey === 'Offline');
+    this.noDataCount = this.allVehicles.filter(
+      (v) => v.statusKey === 'NoData' || v.neverConnected
+    );
+
+    this.resellerData = {
+      All: this.allVehicles.length,
+      Running: running.length,
+      Stop: stop.length,
+      Idle: idle.length,
+      Offline: offline.length,
+      NoData: this.noDataCount.length,
+    };
+  }
+
+  onStatusClick(_value: any, type: any) {
+    this.applyStatusFilter(type);
+  }
+
+  private applyStatusFilter(type: any) {
     this.type = type;
     this.page = 1;
-    this.adminDashboardService
-      .selectReseller(this.selectDealer, value)
-      .subscribe((res: any) => {
-        this.spinnerLoading = false;
-        let data = res?.body?.Result?.Data;
-        this.expiredCount = data?.filter((res: any) => res?.isexpired === 1);
-        this.expiredSoon = data?.filter((res: any) => res?.isexpiredsoon === 1);  
-        if(type == 'soon') {          
-          this.resellerValue = this.expiredSoon;
-        } else if (type == 'expired') {
-          this.resellerValue = this.expiredCount;
-        } else {
-          this.resellerValue = data;
-        }
-      });
+    this.searchKeyword = '';
+
+    if (type === 'NoData') {
+      this.resellerValue = this.allVehicles.filter(
+        (v) => v.statusKey === 'NoData' || v.neverConnected
+      );
+    } else if (type === 'All') {
+      this.resellerValue = [...this.allVehicles];
+    } else {
+      this.resellerValue = this.allVehicles.filter((v) => v.statusKey === type);
+    }
   }
 
-  getSelectResellerOverview(value: any, type: any) {
-    this.type = type;
-    this.page = 1;
-    this.adminDashboardService
-      .selectResellerOverview(
-        this.userDetail?.dealerId,
-        value,
-        this.userDetail?.role
-      )
-      .subscribe((res: any) => {
-        this.resellerValue = res?.body?.Result?.Data;        
-        this.expiredCount = this.resellerValue?.filter((res: any) => res?.isexpired === 1);
-        this.expiredSoon = this.resellerValue?.filter((res: any) => res?.isexpiredsoon === 1);  
-      });
+  getFilteredRows(): any[] {
+    if (!this.resellerValue) {
+      return [];
+    }
+    if (!this.searchKeyword?.trim()) {
+      return this.resellerValue;
+    }
+    const keyword = this.searchKeyword.toLowerCase().trim();
+    return this.resellerValue.filter((item: any) =>
+      JSON.stringify(item).toLowerCase().includes(keyword)
+    );
   }
 
-  /**
-   * table data change
-   * @param event
-   */
   onTableDataChange(event: any) {
     this.page = event;
   }
@@ -287,35 +413,33 @@ export class AllCustomerDetailsComponent {
         return 'assets/drawable/rp_marker_tractor_gray.png';
       }
     }
-    return 'NA';
+    return 'assets/drawable/rp_marker_car_gray.png';
   }
 
-  formatDate(date: string | null): string {
-    return date ? this.datePipe.transform(date, 'dd-MM-yyyy') || '' : '';
+  formatDate(date: string | null, format: string = 'yyyy-MM-dd'): string {
+    return date ? this.datePipe.transform(date, format) || '' : '';
   }
 
   exportToExcels() {
-    this.excelData = this.resellerValue.map((item: any) => {
-      {
-        return {
-          'Customer': item?.Customer?.CustomerName,
-          'Mobile No.': item?.Customer?.ContactNumber,
-          'Installation': this.formatDate(item?.Device?.InstallationDate),
-          'Point Recharge': this.formatDate(item?.PointValidity?.NextRechargeDue),
-          'Customer Recharge': this.formatDate(item?.PointValidity?.CustomerRechargeDue),
-          'Vehicle No' : item?.Device?.VehicleNo, 
-          'Type': item?.Device?.DeviceTypeMeta?.Name,
-          'DeviceId': item?.Device?.DeviceId,
-          'IMEI' : item?.Device?.DeviceImei,
-          'SIM Phone' : item?.Device?.SimPhoneNumber,
-          'Last Update': this.formatDate(item?.Eventdata?.Timestamp)
-        }
-      }
-      
-    })
+    const rows = this.getFilteredRows() || [];
+    this.excelData = rows.map((item: any) => {
+      return {
+        Customer: item?.Customer?.CustomerName,
+        'Mobile No.': item?.Customer?.ContactNumber,
+        Installation: this.formatDate(item?.Device?.InstallationDate),
+        'Point Recharge': this.formatDate(item?.PointValidity?.NextRechargeDue),
+        'Customer Recharge': this.formatDate(item?.PointValidity?.CustomerRechargeDue),
+        'Vehicle No': item?.Device?.VehicleNo,
+        Type: item?.Device?.DeviceTypeMeta?.Name,
+        DeviceId: item?.Device?.DeviceId,
+        IMEI: item?.Device?.DeviceImei,
+        'SIM Phone': item?.Device?.SimPhoneNumber,
+        'Last Update': this.formatDate(item?.Eventdata?.Timestamp, 'yyyy-MM-dd HH:mm:ss'),
+      };
+    });
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(this.excelData);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Device Report');
-    XLSX.writeFile(wb,  `Device Report.xlsx`);
+    XLSX.writeFile(wb, `Device Report.xlsx`);
   }
 }

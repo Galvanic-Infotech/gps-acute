@@ -185,8 +185,7 @@ export class NewVehicleListComponent {
   openAllresellerDetails() {
     const initialState: ModalOptions = {
       initialState: {
-        selectDealer: this.selectedDealer,
-        dealerName: this.selectDealerName
+        dealerName: 'All Device',
       },
     };
     this.bsModelRef = this.bsmodelService.show(

@@ -32,6 +32,11 @@ export class HttpInterceptorsService implements HttpInterceptor {
         httpRequest.url.startsWith("https://api.ipify.org?format=json")) {
       return next.handle(httpRequest); 
     }
+
+    // Do not attach JWT on login / auth requests
+    if (this.isAuthRequest(httpRequest.url)) {
+      return next.handle(httpRequest);
+    }
     
     // Use the active token from the user switch stack (last entry).
     // This ensures that when we switch users, the interceptor immediately
@@ -63,6 +68,19 @@ export class HttpInterceptorsService implements HttpInterceptor {
 
     // For requests without token
     return next.handle(httpRequest);
+  }
+
+  private isAuthRequest(url: string): boolean {
+    const normalizedUrl = url.split('?')[0].replace(/\/+$/, '');
+    const authPaths = [
+      '/token',
+      '/Login/DLogin',
+      '/Login/CforgotPassword',
+      '/Login/DforgotPassword',
+      '/Login/SendEmail',
+      '/Login/SendMessage',
+    ];
+    return authPaths.some((path) => normalizedUrl.endsWith(path) || normalizedUrl.includes(path + '/'));
   }
 
 

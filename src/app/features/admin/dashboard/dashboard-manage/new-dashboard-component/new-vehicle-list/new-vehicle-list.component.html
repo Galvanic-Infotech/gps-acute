@@ -8,7 +8,11 @@
                 </div>
                 <div *ngIf="showContent">
                     <div class="card-body">
-                        <!-- Dealer and Customer dropdowns removed - showing all vehicles directly -->
+                        <div class="device-list-actions mb-2">
+                            <button class="btn btn-primary btn-sm" (click)="openAllresellerDetails()" title="Device List & Export">
+                                <i class="fa fa-file-text" aria-hidden="true"></i> Device List
+                            </button>
+                        </div>
                     </div>
                     <div class="card-content">        
                         <div>

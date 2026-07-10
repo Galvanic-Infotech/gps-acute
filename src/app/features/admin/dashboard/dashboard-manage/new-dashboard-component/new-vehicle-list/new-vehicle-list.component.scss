@@ -271,6 +271,18 @@ span.login-user {
     }
 }
 
+.device-list-actions {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 8px;
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+}
+
 .search-container {
     position: relative;
     display: flex;
