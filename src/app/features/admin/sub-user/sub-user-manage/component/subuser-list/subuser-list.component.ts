@@ -9,6 +9,7 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { RefreshpageService } from 'src/app/features/http-services/refreshpage.service';
 import { UserSwitchService } from 'src/app/features/shared/services/user-switch.service';
 import { SubuserLinkedVehiclesComponent } from '../subuser-linked-vehicles/subuser-linked-vehicles.component';
+import { MoveUserComponent } from '../move-user/move-user.component';
 
 @Component({
   selector: 'subuser-list',
@@ -39,6 +40,10 @@ export class SubuserListComponent {
     {
       name: 'Login User',
       path: 'LoginUser',
+    },
+    {
+      name: 'Move User',
+      path: 'MoveUser',
     },
     {
       name: 'Delete',
@@ -217,6 +222,9 @@ export class SubuserListComponent {
     } else if (path == 'LoginUser') {
       this.loginAsUser(this.selectedSubUserValue);
       return;
+    } else if (path == 'MoveUser') {
+      this.openMoveUser(this.selectedSubUserValue);
+      return;
     } else if (path == 'vehicle') {
       this.openLinkedVehicles(this.selectedSubUserValue);
       return;
@@ -228,6 +236,23 @@ export class SubuserListComponent {
     }
     // Don't call announceCustomerAdded() when navigating - only call it after successful save/update
     this.router.navigateByUrl(url);
+  }
+
+  openMoveUser(user: any): void {
+    const initialState: ModalOptions = {
+      initialState: {
+        sourceUser: user
+      }
+    };
+    const ref = this.bsmodelService.show(
+      MoveUserComponent,
+      Object.assign(initialState, { class: 'modal-lg modal-dialog-centered' })
+    );
+    ref?.content?.moved?.subscribe((value: any) => {
+      if (value?.success) {
+        this.getUserList();
+      }
+    });
   }
 
   openLinkedVehicles(user: any): void {

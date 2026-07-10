@@ -68,6 +68,7 @@ export const API_CONSTANTS: any = {
   getUserById: 'User/{id}',
   updateUser: 'User/{id}',
   deleteUser: 'User/{id}',
+  moveUser: 'MoveUser',
   validateLoginId: 'User/validate-login',
   customerUser: 'CustomerUser/GetById/{cusotmerId}/{userId}',
   customerDevice: 'v1/CustomerDevice/{dealerId}/{customerId}' ,

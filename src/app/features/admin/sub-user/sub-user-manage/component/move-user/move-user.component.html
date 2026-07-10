@@ -1,0 +1,83 @@
+<div class="modal-header">
+  <h5 class="modal-title">
+    Move User: {{ sourceUser?.userName || sourceUser?.loginId }}
+  </h5>
+  <button type="button" class="btn-close" (click)="close()"></button>
+</div>
+<div class="modal-body">
+  <app-loader *ngIf="isLoading || isSubmitting"></app-loader>
+
+  <div class="mb-3">
+    <input
+      type="text"
+      class="form-control"
+      placeholder="Search target user by Mobile No, Login ID or Name..."
+      [(ngModel)]="searchTerm"
+      (input)="applySearch()"
+    />
+  </div>
+
+  <div *ngIf="!isLoading && filteredUsers.length === 0" class="text-center text-muted py-3">
+    No users available.
+  </div>
+
+  <table class="table table-striped" *ngIf="filteredUsers.length > 0">
+    <thead>
+      <tr>
+        <th>Select</th>
+        <th>User Id</th>
+        <th>Name</th>
+        <th>Login Id</th>
+        <th>Mobile No</th>
+        <th>User Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        *ngFor="let u of filteredUsers | paginate : {
+          itemsPerPage: tableSize,
+          currentPage: page,
+          totalItems: count
+        }"
+        [ngClass]="{ 'active': selectedTargetId === u.id }"
+        (click)="selectTarget(u.id)"
+        style="cursor: pointer;"
+      >
+        <td>
+          <input
+            type="radio"
+            name="moveTarget"
+            [checked]="selectedTargetId === u.id"
+            (change)="selectTarget(u.id)"
+          />
+        </td>
+        <td>{{ u?.id ?? 'N/A' }}</td>
+        <td>{{ u?.userName || 'N/A' }}</td>
+        <td>{{ u?.loginId || 'N/A' }}</td>
+        <td>{{ u?.mobileNo || 'N/A' }}</td>
+        <td>{{ u?.userType === 1 ? 'Dealer' : u?.userType === 2 ? 'Customer' : 'N/A' }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="pagination-data" *ngIf="filteredUsers.length > tableSize">
+    <pagination-controls
+      previousLabel="Prev"
+      nextLabel="Next"
+      (pageChange)="onTableDataChange($event)">
+    </pagination-controls>
+  </div>
+</div>
+<div class="modal-footer">
+  <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="isSubmitting">
+    Cancel
+  </button>
+  <button
+    type="button"
+    class="btn btn-primary"
+    (click)="submit()"
+    [disabled]="!selectedTargetId || isSubmitting"
+  >
+    Move
+  </button>
+</div>

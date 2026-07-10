@@ -98,6 +98,13 @@ export class SubUserService {
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
 
+  moveUser(payload: { users: number[]; moveTo: number }): Observable<any> {
+    let url = API_CONSTANTS.moveUser;
+    return this.apiService
+      .post(url, payload)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
+
   getDevicesByUserId(userId: number): Observable<any> {
     let url = API_CONSTANTS.getDevicesByUserId.replace('{userId}', userId.toString());
     return this.apiService
