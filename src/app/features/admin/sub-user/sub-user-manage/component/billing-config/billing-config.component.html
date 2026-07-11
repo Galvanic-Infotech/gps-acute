@@ -1,0 +1,65 @@
+<app-loader *ngIf="spinnerLoading"></app-loader>
+<div class="card">
+    <div class="card-header">
+        Billing Config
+        <app-close-routes [route]="routePath"></app-close-routes>
+    </div>
+    <div class="card-body">
+        <form [formGroup]="billingForm" (ngSubmit)="submit(billingForm.value)">
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Credit Limit</label>
+                    <input type="number" class="form-control" formControlName="creditLimit"
+                        placeholder="Enter Credit Limit" />
+                    <div *ngIf="billingForm.get('creditLimit')?.invalid && (billingForm.get('creditLimit')?.touched || billingForm.get('creditLimit')?.dirty)"
+                        class="text-danger">Credit Limit is required.</div>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Current Outstanding</label>
+                    <input type="number" class="form-control" formControlName="currentOutstanding"
+                        placeholder="Enter Current Outstanding" />
+                    <div *ngIf="billingForm.get('currentOutstanding')?.invalid && (billingForm.get('currentOutstanding')?.touched || billingForm.get('currentOutstanding')?.dirty)"
+                        class="text-danger">Current Outstanding is required.</div>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Tax Rate (%)</label>
+                    <input type="number" class="form-control" formControlName="taxRate"
+                        placeholder="Enter Tax Rate" />
+                    <div *ngIf="billingForm.get('taxRate')?.invalid && (billingForm.get('taxRate')?.touched || billingForm.get('taxRate')?.dirty)"
+                        class="text-danger">Tax Rate is required.</div>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Year In Days</label>
+                    <input type="number" class="form-control" formControlName="yearInDays"
+                        placeholder="Enter Year In Days" />
+                    <div *ngIf="billingForm.get('yearInDays')?.invalid && (billingForm.get('yearInDays')?.touched || billingForm.get('yearInDays')?.dirty)"
+                        class="text-danger">Year In Days is required.</div>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Yearly Amount</label>
+                    <input type="number" class="form-control" formControlName="yearlyAmount"
+                        placeholder="Enter Yearly Amount" />
+                    <div *ngIf="billingForm.get('yearlyAmount')?.invalid && (billingForm.get('yearlyAmount')?.touched || billingForm.get('yearlyAmount')?.dirty)"
+                        class="text-danger">Yearly Amount is required.</div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="btn btn-success" type="submit">
+                        {{ isEditMode ? 'Update' : 'Submit' }}
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-danger" (click)="cancel($event)">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

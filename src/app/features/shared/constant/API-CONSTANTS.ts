@@ -158,6 +158,8 @@ export const API_CONSTANTS: any = {
   publicTrack: 'VehicleList/Track/{key}',
   shareUrl: 'ShareUrl',
   linkPlan: 'Billing/LinkPlan',
+  billingConfig: 'Billing/BillingConfig',
+  billingConfigByDealer: 'Billing/BillingConfig/{id}',
   bulkDeviceActivated:'v1/CustomerDevice/Active/{dealerId}/{customerId}',
   duplicateLoginId: 'v1/Customer/DuplicateCustomerLoginId',
   deviceDetail: 'DeviceData/GetdistanceReport',

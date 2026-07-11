@@ -84,7 +84,7 @@
                                 </div>
                                 <mat-menu #contextMenu="matMenu">
                                     <ng-template matMenuContent let-item="item">
-                                        <button mat-menu-item *ngFor="let menuItem of urlPath" (click)="redirectTo(menuItem?.path)">
+                                        <button mat-menu-item *ngFor="let menuItem of contextMenuItems" (click)="redirectTo(menuItem?.path)">
                                             {{ menuItem.name }}
                                         </button>
                                         

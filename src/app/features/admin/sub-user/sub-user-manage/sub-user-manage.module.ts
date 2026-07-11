@@ -11,6 +11,7 @@ import { SubuserVehicleComponent } from './component/subuser-details/subuser-veh
 import { AddSubuserComponent } from './component/subuser-details/add-subuser/add-subuser.component';
 import { SubuserLinkedVehiclesComponent } from './component/subuser-linked-vehicles/subuser-linked-vehicles.component';
 import { MoveUserComponent } from './component/move-user/move-user.component';
+import { BillingConfigComponent } from './component/billing-config/billing-config.component';
 
 
 @NgModule({
@@ -22,7 +23,8 @@ import { MoveUserComponent } from './component/move-user/move-user.component';
     SubuserVehicleComponent,
     AddSubuserComponent,
     SubuserLinkedVehiclesComponent,
-    MoveUserComponent
+    MoveUserComponent,
+    BillingConfigComponent
   ],
   imports: [
     CommonModule,

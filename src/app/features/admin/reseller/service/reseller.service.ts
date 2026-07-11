@@ -61,4 +61,24 @@ export class ResellerService {
       .post(url, payload)
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
+
+  getBillingConfig(dealerId: any): Observable<any> {
+    const url = API_CONSTANTS.billingConfigByDealer.replace('{id}', dealerId);
+    return this.apiService
+      .get(url)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
+
+  createBillingConfig(payload: any): Observable<any> {
+    return this.apiService
+      .post(API_CONSTANTS.billingConfig, payload)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
+
+  updateBillingConfig(dealerId: any, payload: any): Observable<any> {
+    const url = API_CONSTANTS.billingConfigByDealer.replace('{id}', dealerId);
+    return this.apiService
+      .patch(url, payload)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
 }

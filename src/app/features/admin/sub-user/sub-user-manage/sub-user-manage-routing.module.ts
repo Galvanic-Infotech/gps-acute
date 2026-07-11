@@ -2,8 +2,8 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { SubUserManageComponent } from './pages/sub-user-manage/sub-user-manage.component';
 import { AddSubuserComponent } from './component/subuser-details/add-subuser/add-subuser.component';
-import { ModifySubuserComponent } from './component/subuser-details/modify-subuser/modify-subuser.component';
 import { SubuserVehicleComponent } from './component/subuser-details/subuser-vehicle/subuser-vehicle.component';
+import { BillingConfigComponent } from './component/billing-config/billing-config.component';
 
 const routes: Routes = [
   {
@@ -12,6 +12,7 @@ const routes: Routes = [
       { path: ':id/:cusID/add-subuser', component: AddSubuserComponent },
       { path: ':id/:cusID/:subUserId/modify-subuser', component: AddSubuserComponent },
       { path: ':id/:cusID/:subUserId/device-mapping', component: SubuserVehicleComponent },
+      { path: ':dealerId/billing-config', component: BillingConfigComponent },
     ]
   }
 ];
