@@ -1,0 +1,131 @@
+<app-loader *ngIf="spinnerLoading"></app-loader>
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">Dealer Outstanding</div>
+      <div class="card-body">
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Search by dealer name, login id, mobile..."
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+            />
+          </div>
+          <div class="col-md-6 text-right total-count">
+            Total: <b>{{ totalCount }}</b>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-md-12">
+            <div id="datatable_wrapper" class="dataTables_wrapper no-footer">
+              <div class="dataTables_scroll">
+                <div class="dataTables_scrollBody">
+                  <table
+                    id="datatable"
+                    class="table table-striped nowrap dataTable no-footer dtr-inline"
+                    role="grid"
+                    style="width: 100%"
+                    width="100%"
+                  >
+                    <thead>
+                      <tr role="row">
+                        <th *ngFor="let c of columns">
+                          <strong>{{ c.title }}</strong>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr
+                        *ngFor="let row of items; let i = index"
+                        [ngClass]="{ 'billing-disabled': !isBillingEnabled(row) }"
+                      >
+                        <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+                        <td>{{ row?.dealerName || '-' }}</td>
+                        <td>{{ row?.loginId || '-' }}</td>
+                        <td>{{ row?.mobileNo || '-' }}</td>
+                        <td>
+                          {{ isBillingEnabled(row) ? (row?.creditLimit | number:'1.2-2') : '-' }}
+                        </td>
+                        <td [class.negative]="row?.currentOutstanding < 0">
+                          {{ isBillingEnabled(row) ? (row?.currentOutstanding | number:'1.2-2') : '-' }}
+                        </td>
+                        <td>{{ isBillingEnabled(row) ? row?.taxRate : '-' }}</td>
+                        <td>
+                          <span *ngIf="isBillingEnabled(row); else notEnabled">
+                            {{ row?.lastUpdateOn | date:'dd/MM/yyyy HH:mm' }}
+                          </span>
+                          <ng-template #notEnabled>
+                            <span class="tag-disabled">Billing not enabled</span>
+                          </ng-template>
+                        </td>
+                        <td>
+                          <button
+                            mat-icon-button
+                            [disabled]="!isBillingEnabled(row)"
+                            [title]="isBillingEnabled(row) ? '' : 'Billing not enabled'"
+                            (click)="onContextMenu($event, row)"
+                          >
+                            <mat-icon>more_vert</mat-icon>
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div
+                    class="text-center"
+                    *ngIf="items.length === 0 && !spinnerLoading"
+                    style="width: 100%"
+                  >
+                    No Data Available
+                  </div>
+                </div>
+
+                <div class="pagination-data" *ngIf="totalPages > 0">
+                  <button
+                    class="pg-btn"
+                    [disabled]="page <= 1"
+                    (click)="onPageChange(page - 1)"
+                  >
+                    Prev
+                  </button>
+                  <span class="pg-info">
+                    Page <b>{{ page }}</b> of <b>{{ totalPages }}</b>
+                  </span>
+                  <button
+                    class="pg-btn"
+                    [disabled]="page >= totalPages"
+                    (click)="onPageChange(page + 1)"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+
+              <div
+                style="visibility: hidden; position: fixed"
+                [style.left]="contextMenuPosition.x"
+                [style.top]="contextMenuPosition.y"
+                [matMenuTriggerFor]="contextMenu"
+              ></div>
+              <mat-menu #contextMenu="matMenu">
+                <ng-template matMenuContent>
+                  <button
+                    mat-menu-item
+                    *ngFor="let m of contextMenuItems"
+                    (click)="redirectTo(m.path)"
+                  >
+                    {{ m.name }}
+                  </button>
+                </ng-template>
+              </mat-menu>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

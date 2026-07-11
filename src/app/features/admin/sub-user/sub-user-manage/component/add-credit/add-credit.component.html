@@ -1,7 +1,9 @@
 <div class="card">
-    <div class="card-header">
-        Add Credit
-        <app-close-routes [route]="routePath"></app-close-routes>
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Add Credit<span *ngIf="dealerName"> — {{ dealerName }}</span></span>
+        <button type="button" class="btn btn-sm btn-link p-0" aria-label="Close" (click)="bsModalRef.hide()">
+            <i class="fa fa-times"></i>
+        </button>
     </div>
     <div class="card-body">
         <form [formGroup]="creditForm" (ngSubmit)="submit(creditForm.value)">

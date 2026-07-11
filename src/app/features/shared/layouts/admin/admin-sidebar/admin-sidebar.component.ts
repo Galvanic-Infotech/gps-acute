@@ -99,7 +99,7 @@ export class AdminSidebarComponent {
         config = config.filter(item => item.name !== "Reseller");
       }
       if (role !== "0" && role !== "1") {
-        config = config.filter(item => item.name !== "Plan Management");
+        config = config.filter(item => item.name !== "Plan Management" && item.name !== "Outstanding");
       }
       this.menuConfig = config;
     })

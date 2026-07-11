@@ -135,6 +135,19 @@ export const admin = [
     ],
   },
   {
+    name: "Outstanding",
+    path: "",
+    iconClass: "assets/icons/icon_ReportsReports.svg",
+    subNav: [
+      {
+        "id": 200,
+        "name": "Dealer Outstanding",
+        "path": "admin/subuser/outstanding",
+        "icon_Url": "MenuLeft.png"
+      },
+    ],
+  },
+  {
     name: "Plan Management",
     path: "",
     iconClass: "assets/icons/icon_ReportsReports.svg",

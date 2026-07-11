@@ -1,0 +1,50 @@
+.total-count {
+  align-self: center;
+  font-size: 13px;
+  color: #555;
+}
+
+.billing-disabled {
+  color: #9a9a9a;
+  background: #fafafa;
+}
+
+.negative {
+  color: #d0021b;
+  font-weight: 600;
+}
+
+.tag-disabled {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: #eee;
+  color: #777;
+  font-size: 11px;
+}
+
+.pagination-data {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  justify-content: flex-end;
+
+  .pg-btn {
+    padding: 4px 12px;
+    background: #ff9934;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+
+  .pg-info {
+    font-size: 13px;
+  }
+}

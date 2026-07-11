@@ -1,6 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { BsModalRef } from 'ngx-bootstrap/modal';
 import { NotificationService } from 'src/app/features/http-services/notification.service';
 import { ResellerService } from 'src/app/features/admin/reseller/service/reseller.service';
 
@@ -12,19 +12,18 @@ import { ResellerService } from 'src/app/features/admin/reseller/service/reselle
 export class AddCreditComponent {
   creditForm!: FormGroup;
   dealerId: any;
-  routePath = 'admin/subuser/customer-sub-user';
+  dealerName = '';
   submitting = false;
+  @Output() saved = new EventEmitter<void>();
 
   constructor(
     private fb: FormBuilder,
     private resellerService: ResellerService,
     private notificationService: NotificationService,
-    private activeRoute: ActivatedRoute,
-    private router: Router
+    public bsModalRef: BsModalRef,
   ) {}
 
   ngOnInit() {
-    this.dealerId = this.activeRoute.snapshot.paramMap.get('dealerId');
     this.creditForm = this.fb.group({
       amount: ['', [Validators.required]],
       description: ['', [Validators.required]],
@@ -46,7 +45,8 @@ export class AddCreditComponent {
       this.submitting = false;
       if (res?.body?.result === true || res?.status === 200) {
         this.notificationService.showSuccess(res?.body?.data || 'Credit added successfully');
-        this.router.navigateByUrl(this.routePath);
+        this.saved.emit();
+        this.bsModalRef.hide();
       } else {
         this.notificationService.showError(
           res?.error?.Error?.Message || res?.error?.message || 'Failed to add credit'
@@ -57,6 +57,6 @@ export class AddCreditComponent {
 
   cancel(event: any) {
     event.preventDefault();
-    this.router.navigateByUrl(this.routePath);
+    this.bsModalRef.hide();
   }
 }

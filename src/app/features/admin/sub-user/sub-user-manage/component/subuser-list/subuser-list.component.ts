@@ -10,7 +10,6 @@ import { RefreshpageService } from 'src/app/features/http-services/refreshpage.s
 import { UserSwitchService } from 'src/app/features/shared/services/user-switch.service';
 import { SubuserLinkedVehiclesComponent } from '../subuser-linked-vehicles/subuser-linked-vehicles.component';
 import { MoveUserComponent } from '../move-user/move-user.component';
-import { StorageService } from 'src/app/features/http-services/storage.service';
 
 @Component({
   selector: 'subuser-list',
@@ -52,7 +51,6 @@ export class SubuserListComponent {
     },
   ];
   contextMenuItems: any[] = [];
-  canManageBilling = false;
   bsModelRef!: BsModalRef;
   contextMenuPosition = { x: '0px', y: '0px' };
 
@@ -69,8 +67,7 @@ export class SubuserListComponent {
     private bsmodelService: BsModalService,
     private notificationService: NotificationService,
     private refreshpage: RefreshpageService,
-    private userSwitchService: UserSwitchService,
-    private storageService: StorageService
+    private userSwitchService: UserSwitchService
   ) { }
 
   ngOnInit() {
@@ -78,17 +75,9 @@ export class SubuserListComponent {
 
     this.setInitialValue();
     this.getUserList();
-    this.loadBillingPermission();
-    
+
     this.refreshCustomerService.customerAdded$.subscribe(() => {
       this.getUserList()
-    });
-  }
-
-  loadBillingPermission() {
-    this.storageService.getItem('userDetail').subscribe((user: any) => {
-      const role = String(user?.role);
-      this.canManageBilling = role === '0' || role === '1';
     });
   }
 
@@ -239,15 +228,6 @@ export class SubuserListComponent {
     } else if (path == 'vehicle') {
       this.openLinkedVehicles(this.selectedSubUserValue);
       return;
-    } else if (path == 'billing-config') {
-      const dealerId = this.selectedSubUserValue?.id;
-      url = `/admin/subuser/customer-sub-user/${dealerId}/billing-config`;
-    } else if (path == 'generate-bill') {
-      const dealerId = this.selectedSubUserValue?.id;
-      url = `/admin/subuser/customer-sub-user/${dealerId}/generate-bill`;
-    } else if (path == 'add-credit') {
-      const dealerId = this.selectedSubUserValue?.id;
-      url = `/admin/subuser/customer-sub-user/${dealerId}/add-credit`;
     } else {
       // Use fkCustomerId and fkParentId from the selected user data
       const customerId = this.selectedSubUserValue?.fkCustomerId || 0;
@@ -406,14 +386,6 @@ export class SubuserListComponent {
   onContextMenu(event: MouseEvent, item: any, i: any): void {
     this.selectedSubUserValue = item;
     this.contextMenuItems = [...this.urlPath];
-    // Billing actions: only for Dealers (userType 1), and only when logged-in role is 0 or 1
-    if (this.canManageBilling && item?.userType === 1) {
-      this.contextMenuItems.push(
-        { path: 'billing-config', name: 'Billing Config' },
-        { path: 'generate-bill', name: 'Generate Bill' },
-        { path: 'add-credit', name: 'Add Credit' },
-      );
-    }
     event.preventDefault();
     this.contextMenuPosition.x = event.clientX + 'px';
     this.contextMenuPosition.y = event.clientY + 'px';

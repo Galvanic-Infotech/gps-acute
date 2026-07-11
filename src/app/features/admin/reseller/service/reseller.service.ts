@@ -99,4 +99,15 @@ export class ResellerService {
       .get(API_CONSTANTS.billingWallet)
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
+
+  getOutstanding(pageNumber: number, pageSize: number, search: string): Observable<any> {
+    const params: any = {
+      pageNumber: String(pageNumber),
+      pageSize: String(pageSize),
+      search: search ?? '',
+    };
+    return this.apiService
+      .get(API_CONSTANTS.billingOutstanding, { params })
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
 }
