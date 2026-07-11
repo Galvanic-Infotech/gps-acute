@@ -3,6 +3,7 @@ import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import * as XLSX from 'xlsx';
 import { DatePipe } from '@angular/common';
+import { DeviceManageService } from 'src/app/features/admin/device/device-manage/service/device-manage.service';
 
 @Component({
   selector: 'app-all-customer-details',
@@ -34,15 +35,18 @@ export class AllCustomerDetailsComponent {
   noDataCount: any[] = [];
   searchKeyword: string = '';
   spinnerLoading = false;
+  deviceTypeMap: Map<number, string> = new Map();
 
   constructor(
     private adminDashboardService: AdminDashboardService,
     private bsModalService: BsModalService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private deviceManageService: DeviceManageService
   ) {}
 
   ngOnInit() {
     this.setInitialValue();
+    this.loadDeviceTypes();
     this.loadVehicleList();
   }
 
@@ -53,11 +57,37 @@ export class AllCustomerDetailsComponent {
       { key: '', title: 'Point Recharge' },
       { key: '', title: 'Customer Recharge' },
       { key: '', title: 'Vehicle No' },
+      { key: '', title: 'Type' },
       { key: '', title: 'DeviceId' },
       { key: '', title: 'IMEI' },
       { key: '', title: 'SIM Phone' },
       { key: '', title: 'Last Update' },
     ];
+  }
+
+  loadDeviceTypes() {
+    this.deviceManageService.getDeviceTypes().subscribe((res: any) => {
+      if (res?.body?.result === true) {
+        const deviceTypes = res?.body?.data || [];
+        this.deviceTypeMap.clear();
+        deviceTypes.forEach((type: any) => {
+          if (type?.id != null) {
+            this.deviceTypeMap.set(Number(type.id), type.name || '');
+          }
+        });
+      }
+    });
+  }
+
+  getDeviceTypeName(deviceTypeId: any): string {
+    if (deviceTypeId == null || deviceTypeId === '') {
+      return '';
+    }
+    const id = typeof deviceTypeId === 'number' ? deviceTypeId : parseInt(deviceTypeId, 10);
+    if (Number.isNaN(id)) {
+      return String(deviceTypeId);
+    }
+    return this.deviceTypeMap.get(id) || '';
   }
 
   loadVehicleList() {
@@ -129,13 +159,12 @@ export class AllCustomerDetailsComponent {
     const customer = item?.customer || item?.Customer || {};
     const device = item?.device || {};
     const validity = item?.validity || {};
-    const deviceType =
-      device?.deviceTypeMeta?.name ||
-      device?.DeviceTypeMeta?.Name ||
-      device?.deviceTypeName ||
-      device?.typeName ||
+    const fkDeviceType =
       device?.fkDeviceType ||
-      '';
+      device?.deviceTypeId ||
+      device?.DeviceTypeId ||
+      device?.deviceType ||
+      null;
 
     return {
       Customer: {
@@ -170,7 +199,7 @@ export class AllCustomerDetailsComponent {
           validity?.installationOn ||
           null,
         VehicleType: device?.vehicleType || device?.VehicleType || device?.fkVehicleType || 0,
-        DeviceTypeMeta: { Name: deviceType },
+        fkDeviceType,
         Id: device?.id || device?.Id || 0,
       },
       PointValidity: {
@@ -432,6 +461,7 @@ export class AllCustomerDetailsComponent {
         'Point Recharge': this.formatDate(item?.PointValidity?.NextRechargeDue),
         'Customer Recharge': this.formatDate(item?.PointValidity?.CustomerRechargeDue),
         'Vehicle No': item?.Device?.VehicleNo,
+        Type: this.getDeviceTypeName(item?.Device?.fkDeviceType) || item?.Device?.DeviceTypeMeta?.Name || '',
         DeviceId: item?.Device?.DeviceId,
         IMEI: item?.Device?.DeviceImei,
         'SIM Phone': item?.Device?.SimPhoneNumber,

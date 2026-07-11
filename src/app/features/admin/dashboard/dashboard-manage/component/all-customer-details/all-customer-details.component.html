@@ -69,6 +69,7 @@
                     <td>{{ row?.PointValidity?.NextRechargeDue | date : "yyyy-MM-dd" }}</td>
                     <td>{{ row?.PointValidity?.CustomerRechargeDue | date : "yyyy-MM-dd" }}</td>
                     <td>{{ row?.Device?.VehicleNo }}</td>
+                    <td>{{ getDeviceTypeName(row?.Device?.fkDeviceType) || row?.Device?.DeviceTypeMeta?.Name }}</td>
                     <td>{{ row?.Device?.DeviceId }}</td>
                     <td>{{ row?.Device?.DeviceImei }}</td>
                     <td>{{ row?.Device?.SimPhoneNumber }}</td>
