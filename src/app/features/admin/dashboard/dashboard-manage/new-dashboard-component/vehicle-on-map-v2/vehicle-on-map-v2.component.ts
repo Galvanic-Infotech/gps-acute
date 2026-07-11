@@ -645,15 +645,10 @@ export class VehicleOnMapV2Component {
               if (vehicle?.Battery?.status) {
                 html += `<li><a><i class="fa fa-battery-full" style="color:${vehicle.Battery.color} !important"></i><br/><span class="live-value" style="color:black !important">${vehicle.Battery.status}</span></a></li>`;
               }
+              html += `<li><a id="adminReplayId" title="Replay" style="cursor:pointer"><i class="fa fa-undo"></i><br/><span class="live-value" style="color:black !important">Replay</span></a></li>`;
+              html += `<li><a id="adminShareId" title="Share" style="cursor:pointer"><i class="fa fa-share-alt"></i><br/><span class="live-value" style="color:black !important">Share</span></a></li>`;
               return html;
             })()}
-          </ul>
-        </div>
-        <hr style="margin:5px 0"/>
-        <div class="icon-part">
-          <ul class="icon">
-            <li><a id="adminReplayId" title="Replay" style="cursor:pointer"><i class="fa fa-undo"></i><br/><span class="live-value" style="color:black !important">Replay</span></a></li>
-            <li><a id="adminShareId" title="Share" style="cursor:pointer"><i class="fa fa-share-alt"></i><br/><span class="live-value" style="color:black !important">Share</span></a></li>
           </ul>
         </div>
           </div>

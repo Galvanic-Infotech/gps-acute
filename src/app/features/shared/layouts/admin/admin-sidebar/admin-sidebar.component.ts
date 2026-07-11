@@ -93,11 +93,15 @@ export class AdminSidebarComponent {
 
   onCheckRole() {
     this.storageService.getItem("userDetail").subscribe((user: any) => {
-      if (user.role === "1") {
-        this.menuConfig = admin;
-      } else if (user.role === "2") {
-        this.menuConfig = admin.filter(item => item.name !== "Reseller");
+      const role = String(user?.role);
+      let config = admin;
+      if (role === "2") {
+        config = config.filter(item => item.name !== "Reseller");
       }
+      if (role !== "0" && role !== "1") {
+        config = config.filter(item => item.name !== "Plan Management");
+      }
+      this.menuConfig = config;
     })
   }
 
