@@ -1,0 +1,36 @@
+<div class="card">
+    <div class="card-header">
+        Add Credit
+        <app-close-routes [route]="routePath"></app-close-routes>
+    </div>
+    <div class="card-body">
+        <form [formGroup]="creditForm" (ngSubmit)="submit(creditForm.value)">
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Amount</label>
+                    <input type="number" class="form-control" formControlName="amount"
+                        placeholder="Enter Amount" />
+                    <div *ngIf="creditForm.get('amount')?.invalid && (creditForm.get('amount')?.touched || creditForm.get('amount')?.dirty)"
+                        class="text-danger">Amount is required.</div>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea class="form-control" formControlName="description" rows="3"
+                        placeholder="Enter Description"></textarea>
+                    <div *ngIf="creditForm.get('description')?.invalid && (creditForm.get('description')?.touched || creditForm.get('description')?.dirty)"
+                        class="text-danger">Description is required.</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="btn btn-success" type="submit" [disabled]="submitting">
+                        {{ submitting ? 'Saving...' : 'Submit' }}
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-danger" (click)="cancel($event)">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

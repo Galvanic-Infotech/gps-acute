@@ -1,0 +1,34 @@
+<div class="card">
+    <div class="card-header">
+        Generate Bill
+        <app-close-routes [route]="routePath"></app-close-routes>
+    </div>
+    <div class="card-body">
+        <form [formGroup]="billForm" (ngSubmit)="submit(billForm.value)">
+            <div class="row">
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">From Date</label>
+                    <input type="date" class="form-control" formControlName="fromDate" />
+                    <div *ngIf="billForm.get('fromDate')?.invalid && (billForm.get('fromDate')?.touched || billForm.get('fromDate')?.dirty)"
+                        class="text-danger">From Date is required.</div>
+                </div>
+                <div class="col-md-12 mb-3">
+                    <label class="form-label">To Date</label>
+                    <input type="date" class="form-control" formControlName="toDate" />
+                    <div *ngIf="billForm.get('toDate')?.invalid && (billForm.get('toDate')?.touched || billForm.get('toDate')?.dirty)"
+                        class="text-danger">To Date is required.</div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <button class="btn btn-success" type="submit" [disabled]="submitting">
+                        {{ submitting ? 'Generating...' : 'Generate' }}
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-danger" (click)="cancel($event)">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

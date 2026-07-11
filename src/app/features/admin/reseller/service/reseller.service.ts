@@ -81,4 +81,16 @@ export class ResellerService {
       .patch(url, payload)
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
+
+  runBillingSummary(payload: any): Observable<any> {
+    return this.apiService
+      .post(API_CONSTANTS.runBillingSummary, payload)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
+
+  addBillingCredit(payload: any): Observable<any> {
+    return this.apiService
+      .post(API_CONSTANTS.billingCredit, payload)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
 }

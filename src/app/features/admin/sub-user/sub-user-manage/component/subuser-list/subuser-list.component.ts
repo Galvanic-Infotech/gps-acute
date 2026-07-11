@@ -242,6 +242,12 @@ export class SubuserListComponent {
     } else if (path == 'billing-config') {
       const dealerId = this.selectedSubUserValue?.id;
       url = `/admin/subuser/customer-sub-user/${dealerId}/billing-config`;
+    } else if (path == 'generate-bill') {
+      const dealerId = this.selectedSubUserValue?.id;
+      url = `/admin/subuser/customer-sub-user/${dealerId}/generate-bill`;
+    } else if (path == 'add-credit') {
+      const dealerId = this.selectedSubUserValue?.id;
+      url = `/admin/subuser/customer-sub-user/${dealerId}/add-credit`;
     } else {
       // Use fkCustomerId and fkParentId from the selected user data
       const customerId = this.selectedSubUserValue?.fkCustomerId || 0;
@@ -400,9 +406,13 @@ export class SubuserListComponent {
   onContextMenu(event: MouseEvent, item: any, i: any): void {
     this.selectedSubUserValue = item;
     this.contextMenuItems = [...this.urlPath];
-    // Billing Config: only for Dealers (userType 1), and only when logged-in role is 0 or 1
+    // Billing actions: only for Dealers (userType 1), and only when logged-in role is 0 or 1
     if (this.canManageBilling && item?.userType === 1) {
-      this.contextMenuItems.push({ path: 'billing-config', name: 'Billing Config' });
+      this.contextMenuItems.push(
+        { path: 'billing-config', name: 'Billing Config' },
+        { path: 'generate-bill', name: 'Generate Bill' },
+        { path: 'add-credit', name: 'Add Credit' },
+      );
     }
     event.preventDefault();
     this.contextMenuPosition.x = event.clientX + 'px';
