@@ -93,4 +93,10 @@ export class ResellerService {
       .post(API_CONSTANTS.billingCredit, payload)
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
+
+  getBillingWallet(): Observable<any> {
+    return this.apiService
+      .get(API_CONSTANTS.billingWallet)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
 }

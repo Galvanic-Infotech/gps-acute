@@ -11,6 +11,7 @@ import { Location } from '@angular/common';
 import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
 import { LogoutConfirmationDialogeComponent } from '../../components/logout-confirmation-dialoge/logout-confirmation-dialoge.component';
 import { UserSwitchService } from '../../services/user-switch.service';
+import { ResellerService } from 'src/app/features/admin/reseller/service/reseller.service';
 @Component({
   selector: 'app-admin-main-layout',
   templateUrl: './admin-main-layout.component.html',
@@ -70,6 +71,8 @@ export class AdminMainLayoutComponent {
   tabsSubject: any;
   currentUrl: any;
   loginUser: unknown;
+  wallet: any = null;
+  showWallet = false;
 
   constructor(
     private sideNav: SidenavService,
@@ -82,7 +85,8 @@ export class AdminMainLayoutComponent {
     public storageService : StorageService,
     private location : Location,
     private modalService : BsModalService,
-    public userSwitchService : UserSwitchService
+    public userSwitchService : UserSwitchService,
+    private resellerService : ResellerService
   ) {
     document.body.classList.add("add-scroll");
     this.hideSideBar = false;
@@ -135,7 +139,18 @@ export class AdminMainLayoutComponent {
     if (showNotifications == "false") {
       this.showCustomerMessages = false;
     }
-   
+
+    this.loadWalletForDealer();
+  }
+
+  loadWalletForDealer() {
+    this.storageService.getItem('userDetail').subscribe((user: any) => {
+      if (String(user?.role) !== '1') return;
+      this.showWallet = true;
+      this.resellerService.getBillingWallet().subscribe((res: any) => {
+        this.wallet = res?.body?.data ?? res?.data ?? null;
+      });
+    });
   }
 
 

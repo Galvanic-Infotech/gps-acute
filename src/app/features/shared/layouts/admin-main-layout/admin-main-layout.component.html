@@ -49,8 +49,17 @@
               <user-switch-breadcrumb></user-switch-breadcrumb>
             </div>
 
-            <div class="search-box">              
-              <sky-search-control 
+            <div class="wallet-strip" *ngIf="showWallet && wallet">
+              <span class="wallet-item"><label>Credit Limit</label><b>{{ wallet.creditLimit | number:'1.2-2' }}</b></span>
+              <span class="wallet-item"><label>Outstanding</label><b [class.negative]="wallet.currentOutstanding < 0">{{ wallet.currentOutstanding | number:'1.2-2' }}</b></span>
+              <span class="wallet-item"><label>Tax %</label><b>{{ wallet.taxRate }}</b></span>
+              <span class="wallet-item"><label>Yearly</label><b>{{ wallet.yearlyAmount | number:'1.2-2' }}</b></span>
+              <span class="wallet-item"><label>Per Day</label><b>{{ wallet.perDayCost | number:'1.2-2' }}</b></span>
+              <span class="wallet-item"><label>Last Sync</label><b>{{ wallet.lastSync }}</b></span>
+            </div>
+
+            <div class="search-box">
+              <sky-search-control
               placeholder="search"
               title="Please fill out this field."
             ></sky-search-control>
