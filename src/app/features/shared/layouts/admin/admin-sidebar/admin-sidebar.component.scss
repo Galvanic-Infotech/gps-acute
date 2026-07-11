@@ -80,6 +80,10 @@
           font-size: 21px;
           width: 30px;
           cursor: pointer;
+
+          img {
+            filter: brightness(0) invert(1);
+          }
         }
       }
 

@@ -137,7 +137,7 @@ export const admin = [
   {
     name: "Outstanding",
     path: "",
-    iconClass: "assets/icons/icon_ReportsReports.svg",
+    iconClass: "assets/icons/dollar-invoice-icon.svg",
     subNav: [
       {
         "id": 200,
@@ -150,7 +150,7 @@ export const admin = [
   {
     name: "Plan Management",
     path: "",
-    iconClass: "assets/icons/icon_ReportsReports.svg",
+    iconClass: "assets/icons/icon_Point Summary.svg",
     subNav: [
       {
         "id": 139,
