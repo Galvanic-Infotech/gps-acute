@@ -49,13 +49,26 @@
               <user-switch-breadcrumb></user-switch-breadcrumb>
             </div>
 
-            <div class="wallet-strip" *ngIf="showWallet && wallet">
-              <span class="wallet-item"><label>Credit Limit</label><b>{{ wallet.creditLimit | number:'1.2-2' }}</b></span>
-              <span class="wallet-item"><label>Outstanding</label><b [class.negative]="wallet.currentOutstanding < 0">{{ wallet.currentOutstanding | number:'1.2-2' }}</b></span>
-              <span class="wallet-item"><label>Tax %</label><b>{{ wallet.taxRate }}</b></span>
-              <span class="wallet-item"><label>Yearly</label><b>{{ wallet.yearlyAmount | number:'1.2-2' }}</b></span>
-              <span class="wallet-item"><label>Per Day</label><b>{{ wallet.perDayCost | number:'1.2-2' }}</b></span>
-              <span class="wallet-item"><label>Last Sync</label><b>{{ wallet.lastSync }}</b></span>
+            <div class="wallet-widget" *ngIf="showWallet && wallet">
+              <button
+                type="button"
+                class="wallet-chip"
+                [class.dr]="wallet.currentOutstanding < 0"
+                [class.cr]="wallet.currentOutstanding >= 0"
+                (click)="toggleWallet()"
+              >
+                <span class="chip-label">Outstanding</span>
+                <span class="chip-value">{{ outstandingLabel }}</span>
+                <i class="fa" [class.fa-caret-down]="!walletExpanded" [class.fa-caret-up]="walletExpanded"></i>
+              </button>
+
+              <div class="wallet-card" *ngIf="walletExpanded">
+                <div class="wallet-row"><label>Credit Limit</label><b>{{ wallet.creditLimit | number:'1.2-2' }}</b></div>
+                <div class="wallet-row"><label>Tax %</label><b>{{ wallet.taxRate }}</b></div>
+                <div class="wallet-row"><label>Yearly</label><b>{{ wallet.yearlyAmount | number:'1.2-2' }}</b></div>
+                <div class="wallet-row"><label>Per Day</label><b>{{ wallet.perDayCost | number:'1.2-2' }}</b></div>
+                <div class="wallet-row"><label>Last Sync</label><b>{{ wallet.lastSync }}</b></div>
+              </div>
             </div>
 
             <div class="search-box">

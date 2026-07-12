@@ -73,6 +73,7 @@ export class AdminMainLayoutComponent {
   loginUser: unknown;
   wallet: any = null;
   showWallet = false;
+  walletExpanded = false;
 
   constructor(
     private sideNav: SidenavService,
@@ -140,17 +141,39 @@ export class AdminMainLayoutComponent {
       this.showCustomerMessages = false;
     }
 
-    this.loadWalletForDealer();
+    this.userSwitchService.getSessionStack().subscribe((sessions: any[]) => {
+      this.walletExpanded = false;
+      const active = sessions && sessions.length ? sessions[sessions.length - 1] : null;
+      if (active) {
+        this.applyWalletVisibility(active.role === 'dealer');
+      } else {
+        this.storageService.getItem('userDetail').subscribe((user: any) => {
+          this.applyWalletVisibility(String(user?.role) === '1');
+        });
+      }
+    });
   }
 
-  loadWalletForDealer() {
-    this.storageService.getItem('userDetail').subscribe((user: any) => {
-      if (String(user?.role) !== '1') return;
-      this.showWallet = true;
-      this.resellerService.getBillingWallet().subscribe((res: any) => {
-        this.wallet = res?.body?.data ?? res?.data ?? null;
-      });
+  private applyWalletVisibility(isDealer: boolean) {
+    if (!isDealer) {
+      this.showWallet = false;
+      this.wallet = null;
+      return;
+    }
+    this.showWallet = true;
+    this.wallet = null;
+    this.resellerService.getBillingWallet().subscribe((res: any) => {
+      this.wallet = res?.body?.data ?? res?.data ?? null;
     });
+  }
+
+  toggleWallet() {
+    this.walletExpanded = !this.walletExpanded;
+  }
+
+  get outstandingLabel(): string {
+    const v = Number(this.wallet?.currentOutstanding ?? 0);
+    return `${Math.abs(v).toFixed(2)} ${v < 0 ? 'DR' : 'CR'}`;
   }
 
 

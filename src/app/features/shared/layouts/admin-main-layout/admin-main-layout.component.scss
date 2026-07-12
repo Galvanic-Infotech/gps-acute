@@ -309,33 +309,69 @@
         margin: 0 12px;
       }
 
-      .wallet-strip {
-        display: flex;
-        gap: 14px;
-        align-items: center;
-        padding: 4px 10px;
+      .wallet-widget {
+        position: relative;
         margin-right: 12px;
-        background: #fff7ec;
-        border: 1px solid #ffd9a8;
-        border-radius: 6px;
-        font-size: 12px;
-        line-height: 1.1;
 
-        .wallet-item {
-          display: flex;
-          flex-direction: column;
+        .wallet-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          border-radius: 20px;
+          border: 1px solid transparent;
+          font-size: 12px;
+          cursor: pointer;
+          background: #fff7ec;
 
-          label {
+          .chip-label {
             color: #7a7a7a;
-            font-size: 10px;
-            margin: 0;
+            font-size: 11px;
           }
 
-          b {
-            color: #333;
-            font-weight: 600;
+          .chip-value {
+            font-weight: 700;
+            font-size: 13px;
+          }
 
-            &.negative { color: #d0021b; }
+          i { font-size: 10px; color: #666; }
+
+          &.dr {
+            background: #fdecec;
+            border-color: #f5c2c2;
+            .chip-value { color: #d0021b; }
+          }
+
+          &.cr {
+            background: #eaf7ee;
+            border-color: #c5e8ce;
+            .chip-value { color: #1e8e3e; }
+          }
+        }
+
+        .wallet-card {
+          position: absolute;
+          top: calc(100% + 6px);
+          right: 0;
+          z-index: 20;
+          min-width: 220px;
+          padding: 10px 14px;
+          background: #fff;
+          border: 1px solid #e2e2e2;
+          border-radius: 8px;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+          font-size: 12px;
+
+          .wallet-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px dashed #eee;
+
+            &:last-child { border-bottom: none; }
+
+            label { color: #7a7a7a; margin: 0; }
+            b { color: #333; }
           }
         }
       }
