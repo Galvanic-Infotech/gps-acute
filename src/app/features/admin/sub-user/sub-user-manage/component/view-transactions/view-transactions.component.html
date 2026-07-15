@@ -24,6 +24,14 @@
       </div>
       <div class="col-md-3 filter-actions">
         <button class="btn btn-primary" type="button" (click)="onFilter()">Search</button>
+        <button
+          class="btn btn-success"
+          type="button"
+          (click)="exportToExcel()"
+          [disabled]="exporting || (items.length === 0 && totalCount === 0)"
+        >
+          {{ exporting ? 'Exporting...' : 'Excel' }}
+        </button>
       </div>
     </div>
 

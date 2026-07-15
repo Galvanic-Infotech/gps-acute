@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
+import * as XLSX from 'xlsx';
 import { ResellerService } from 'src/app/features/admin/reseller/service/reseller.service';
+import { NotificationService } from 'src/app/features/http-services/notification.service';
 
 @Component({
   selector: 'app-my-transactions',
@@ -8,6 +10,7 @@ import { ResellerService } from 'src/app/features/admin/reseller/service/reselle
 })
 export class MyTransactionsComponent {
   spinnerLoading = false;
+  exporting = false;
   items: any[] = [];
   page = 1;
   pageSize = 10;
@@ -23,7 +26,10 @@ export class MyTransactionsComponent {
     { value: '2', label: 'Debit' },
   ];
 
-  constructor(private resellerService: ResellerService) {}
+  constructor(
+    private resellerService: ResellerService,
+    private notificationService: NotificationService,
+  ) {}
 
   ngOnInit() {
     const today = new Date();
@@ -75,5 +81,51 @@ export class MyTransactionsComponent {
     if (next < 1 || (this.totalPages && next > this.totalPages)) return;
     this.page = next;
     this.load();
+  }
+
+  exportToExcel() {
+    if (!this.fromDate || !this.toDate) return;
+    if (this.totalCount === 0 && this.items.length === 0) {
+      this.notificationService.showError('No data available to export');
+      return;
+    }
+    this.exporting = true;
+    this.resellerService
+      .getLoggedInUserTransactions({
+        fromDate: this.fromDate,
+        toDate: this.toDate,
+        pageNumber: 1,
+        pageSize: Math.max(this.totalCount, this.items.length, 1),
+        transactionType: this.transactionType || undefined,
+      })
+      .subscribe((res: any) => {
+        this.exporting = false;
+        const body = res?.body ?? res;
+        const rows = body?.data?.items || [];
+        if (!rows.length) {
+          this.notificationService.showError('No data available to export');
+          return;
+        }
+        this.downloadExcel(rows, 'Transactions');
+      });
+  }
+
+  private downloadExcel(rows: any[], sheetName: string) {
+    const data = rows.map((row: any, i: number) => ({
+      'Sno.': i + 1,
+      'Billing Date': row?.billingDate || '',
+      'Type': row?.transactionType || '',
+      'Devices': row?.deviceCount ?? '',
+      'Amount': row?.totalAmount ?? '',
+      'Balance After': row?.balanceAfter ?? '',
+      'Description': row?.description || '',
+      'Created': row?.creationTime
+        ? new Date(row.creationTime).toLocaleString('en-GB')
+        : '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    XLSX.writeFile(wb, `${sheetName}_${this.fromDate}_to_${this.toDate}.xlsx`);
   }
 }

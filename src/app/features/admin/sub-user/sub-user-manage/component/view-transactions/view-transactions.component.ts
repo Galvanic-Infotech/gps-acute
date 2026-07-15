@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
+import * as XLSX from 'xlsx';
 import { ResellerService } from 'src/app/features/admin/reseller/service/reseller.service';
+import { NotificationService } from 'src/app/features/http-services/notification.service';
 
 @Component({
   selector: 'app-view-transactions',
@@ -11,6 +13,7 @@ export class ViewTransactionsComponent {
   dealerId: any;
   dealerName = '';
   spinnerLoading = false;
+  exporting = false;
   items: any[] = [];
   page = 1;
   pageSize = 10;
@@ -28,6 +31,7 @@ export class ViewTransactionsComponent {
 
   constructor(
     private resellerService: ResellerService,
+    private notificationService: NotificationService,
     public bsModalRef: BsModalRef,
   ) {}
 
@@ -82,5 +86,49 @@ export class ViewTransactionsComponent {
     if (next < 1 || (this.totalPages && next > this.totalPages)) return;
     this.page = next;
     this.load();
+  }
+
+  exportToExcel() {
+    if (!this.dealerId || !this.fromDate || !this.toDate) return;
+    if (this.totalCount === 0 && this.items.length === 0) {
+      this.notificationService.showError('No data available to export');
+      return;
+    }
+    this.exporting = true;
+    this.resellerService
+      .getBillingTransactions({
+        dealerId: this.dealerId,
+        fromDate: this.fromDate,
+        toDate: this.toDate,
+        pageNumber: 1,
+        pageSize: Math.max(this.totalCount, this.items.length, 1),
+        transactionType: this.transactionType || undefined,
+      })
+      .subscribe((res: any) => {
+        this.exporting = false;
+        const body = res?.body ?? res;
+        const rows = body?.data?.items || [];
+        if (!rows.length) {
+          this.notificationService.showError('No data available to export');
+          return;
+        }
+        const data = rows.map((row: any, i: number) => ({
+          'Sno.': i + 1,
+          'Billing Date': row?.billingDate || '',
+          'Type': row?.transactionType || '',
+          'Devices': row?.deviceCount ?? '',
+          'Amount': row?.totalAmount ?? '',
+          'Balance After': row?.balanceAfter ?? '',
+          'Description': row?.description || '',
+          'Created': row?.creationTime
+            ? new Date(row.creationTime).toLocaleString('en-GB')
+            : '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+        const name = this.dealerName ? this.dealerName.replace(/\s+/g, '_') : 'Dealer';
+        XLSX.writeFile(wb, `${name}_Transactions_${this.fromDate}_to_${this.toDate}.xlsx`);
+      });
   }
 }
