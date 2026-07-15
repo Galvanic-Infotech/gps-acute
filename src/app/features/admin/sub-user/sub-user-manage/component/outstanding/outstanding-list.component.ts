@@ -6,6 +6,7 @@ import { BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
 import { ResellerService } from 'src/app/features/admin/reseller/service/reseller.service';
 import { BillingConfigComponent } from '../billing-config/billing-config.component';
 import { AddCreditComponent } from '../add-credit/add-credit.component';
+import { ViewTransactionsComponent } from '../view-transactions/view-transactions.component';
 
 @Component({
   selector: 'outstanding-list',
@@ -94,6 +95,7 @@ export class OutstandingListComponent {
       ? [
           { path: 'billing-config', name: 'Billing Config' },
           { path: 'add-credit', name: 'Add Credit' },
+          { path: 'view-transactions', name: 'View Transactions' },
         ]
       : [{ path: 'billing-config', name: 'Billing Config' }];
     this.contextMenuPosition.x = event.clientX + 'px';
@@ -114,6 +116,7 @@ export class OutstandingListComponent {
       },
     };
     const modalClass = { class: 'modal-md modal-dialog-centered' };
+    const largeModalClass = { class: 'modal-lg modal-dialog-centered' };
 
     if (path === 'billing-config') {
       const ref = this.modalService.show(
@@ -127,6 +130,11 @@ export class OutstandingListComponent {
         Object.assign(initialState, modalClass)
       );
       ref?.content?.saved?.subscribe(() => this.load());
+    } else if (path === 'view-transactions') {
+      this.modalService.show(
+        ViewTransactionsComponent,
+        Object.assign(initialState, largeModalClass)
+      );
     }
   }
 }

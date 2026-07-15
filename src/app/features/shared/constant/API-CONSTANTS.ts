@@ -164,6 +164,7 @@ export const API_CONSTANTS: any = {
   billingCredit: 'Billing/BillingConfig/credit',
   billingWallet: 'Billing/BillingConfig/wallet',
   billingOutstanding: 'Billing/BillingConfig/GetOutstanding',
+  billingTransactions: 'Billing/BillingConfig/transactions',
   bulkDeviceActivated:'v1/CustomerDevice/Active/{dealerId}/{customerId}',
   duplicateLoginId: 'v1/Customer/DuplicateCustomerLoginId',
   deviceDetail: 'DeviceData/GetdistanceReport',

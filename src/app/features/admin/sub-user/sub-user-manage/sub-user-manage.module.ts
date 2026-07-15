@@ -16,6 +16,7 @@ import { AddCreditComponent } from './component/add-credit/add-credit.component'
 import { OutstandingContainerComponent } from './component/outstanding/outstanding-container.component';
 import { OutstandingListComponent } from './component/outstanding/outstanding-list.component';
 import { SubuserBulkUploadComponent } from './component/subuser-bulk-upload/subuser-bulk-upload.component';
+import { ViewTransactionsComponent } from './component/view-transactions/view-transactions.component';
 
 
 @NgModule({
@@ -32,7 +33,8 @@ import { SubuserBulkUploadComponent } from './component/subuser-bulk-upload/subu
     AddCreditComponent,
     OutstandingContainerComponent,
     OutstandingListComponent,
-    SubuserBulkUploadComponent
+    SubuserBulkUploadComponent,
+    ViewTransactionsComponent
   ],
   imports: [
     CommonModule,
