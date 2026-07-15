@@ -17,6 +17,7 @@ import { OutstandingContainerComponent } from './component/outstanding/outstandi
 import { OutstandingListComponent } from './component/outstanding/outstanding-list.component';
 import { SubuserBulkUploadComponent } from './component/subuser-bulk-upload/subuser-bulk-upload.component';
 import { ViewTransactionsComponent } from './component/view-transactions/view-transactions.component';
+import { MyTransactionsComponent } from './component/my-transactions/my-transactions.component';
 
 
 @NgModule({
@@ -34,7 +35,8 @@ import { ViewTransactionsComponent } from './component/view-transactions/view-tr
     OutstandingContainerComponent,
     OutstandingListComponent,
     SubuserBulkUploadComponent,
-    ViewTransactionsComponent
+    ViewTransactionsComponent,
+    MyTransactionsComponent
   ],
   imports: [
     CommonModule,

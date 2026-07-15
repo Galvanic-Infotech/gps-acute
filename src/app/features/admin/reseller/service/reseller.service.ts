@@ -133,4 +133,25 @@ export class ResellerService {
       .get(API_CONSTANTS.billingTransactions, { params: query })
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
+
+  getLoggedInUserTransactions(params: {
+    fromDate: string;
+    toDate: string;
+    pageNumber: number;
+    pageSize: number;
+    transactionType?: string;
+  }): Observable<any> {
+    const query: any = {
+      fromDate: params.fromDate,
+      toDate: params.toDate,
+      pageNumber: String(params.pageNumber),
+      pageSize: String(params.pageSize),
+    };
+    if (params.transactionType) {
+      query.transactionType = String(params.transactionType);
+    }
+    return this.apiService
+      .get(API_CONSTANTS.billingLoggedInTransactions, { params: query })
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
 }

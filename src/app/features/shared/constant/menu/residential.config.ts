@@ -145,6 +145,12 @@ export const admin = [
         "path": "admin/subuser/outstanding",
         "icon_Url": "MenuLeft.png"
       },
+      {
+        "id": 201,
+        "name": "Transactions",
+        "path": "admin/subuser/transactions",
+        "icon_Url": "MenuLeft.png"
+      },
     ],
   },
   {

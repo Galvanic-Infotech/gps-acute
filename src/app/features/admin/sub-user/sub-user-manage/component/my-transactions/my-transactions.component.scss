@@ -1,0 +1,81 @@
+.filter-row {
+  align-items: flex-end;
+}
+
+.filter-actions {
+  display: flex;
+  align-items: flex-end;
+  padding-bottom: 2px;
+}
+
+.desc {
+  max-width: 260px;
+  white-space: normal;
+  font-size: 12px;
+}
+
+.txn-type {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  background: #eee;
+  color: #666;
+
+  &.credit {
+    background: #e6f6ea;
+    color: #1b7a3a;
+  }
+
+  &.debit {
+    background: #fde8e8;
+    color: #b42318;
+  }
+}
+
+.credit-amt {
+  color: #1b7a3a;
+  font-weight: 600;
+}
+
+.debit-amt {
+  color: #b42318;
+  font-weight: 600;
+}
+
+.negative {
+  color: #d0021b;
+  font-weight: 600;
+}
+
+.pagination-data {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0 0;
+  justify-content: flex-end;
+
+  .total-info {
+    margin-right: auto;
+    font-size: 13px;
+    color: #555;
+  }
+
+  .pg-btn {
+    padding: 4px 12px;
+    background: #ff9934;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+
+    &:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  }
+
+  .pg-info {
+    font-size: 13px;
+  }
+}

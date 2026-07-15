@@ -1,0 +1,83 @@
+<app-loader *ngIf="spinnerLoading"></app-loader>
+<div class="row">
+  <div class="col-md-12">
+    <div class="card">
+      <div class="card-header">Transactions</div>
+      <div class="card-body">
+        <div class="row mb-3 filter-row">
+          <div class="col-md-3">
+            <label class="form-label">From Date</label>
+            <input type="date" class="form-control" [(ngModel)]="fromDate" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">To Date</label>
+            <input type="date" class="form-control" [(ngModel)]="toDate" />
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Type</label>
+            <select class="form-control" [(ngModel)]="transactionType">
+              <option *ngFor="let t of transactionTypes" [value]="t.value">{{ t.label }}</option>
+            </select>
+          </div>
+          <div class="col-md-3 filter-actions">
+            <button class="btn btn-primary" type="button" (click)="onFilter()">Search</button>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-striped nowrap">
+            <thead>
+              <tr>
+                <th>Sno.</th>
+                <th>Billing Date</th>
+                <th>Type</th>
+                <th>Devices</th>
+                <th>Amount</th>
+                <th>Balance After</th>
+                <th>Description</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of items; let i = index">
+                <td>{{ (page - 1) * pageSize + i + 1 }}</td>
+                <td>{{ row?.billingDate | date:'dd/MM/yyyy' }}</td>
+                <td>
+                  <span
+                    class="txn-type"
+                    [class.credit]="row?.transactionType === 'Credit'"
+                    [class.debit]="row?.transactionType === 'Debit'"
+                  >
+                    {{ row?.transactionType || '-' }}
+                  </span>
+                </td>
+                <td>{{ row?.deviceCount ?? '-' }}</td>
+                <td
+                  [class.debit-amt]="row?.transactionType === 'Debit'"
+                  [class.credit-amt]="row?.transactionType === 'Credit'"
+                >
+                  {{ row?.totalAmount | number:'1.2-2' }}
+                </td>
+                <td [class.negative]="row?.balanceAfter < 0">
+                  {{ row?.balanceAfter | number:'1.2-2' }}
+                </td>
+                <td class="desc">{{ row?.description || '-' }}</td>
+                <td>{{ row?.creationTime | date:'dd/MM/yyyy HH:mm' }}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="text-center py-3" *ngIf="items.length === 0 && !spinnerLoading">
+            No transactions found
+          </div>
+        </div>
+
+        <div class="pagination-data" *ngIf="totalPages > 0">
+          <span class="total-info">Total: <b>{{ totalCount }}</b></span>
+          <button class="pg-btn" [disabled]="page <= 1" (click)="onPageChange(page - 1)">Prev</button>
+          <span class="pg-info">Page <b>{{ page }}</b> of <b>{{ totalPages }}</b></span>
+          <button class="pg-btn" [disabled]="page >= totalPages" (click)="onPageChange(page + 1)">Next</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
