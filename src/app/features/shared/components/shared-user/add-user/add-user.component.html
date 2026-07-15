@@ -7,7 +7,7 @@
                     <input type="text" class="form-control" formControlName="userName" placeholder="Enter User Name"
                         aria-describedby="button-addon2" />
                 </div>
-                <div *ngIf="userForm?.get('userName')?.invalid && 
+                <div *ngIf="userForm?.get('userName')?.invalid &&
                     (userForm?.get('userName')?.dirty || userForm?.get('userName')?.touched)"
                         class="text-danger">
                         User Name is required

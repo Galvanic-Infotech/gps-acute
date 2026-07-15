@@ -19,7 +19,7 @@ export class AddUserComponent {
     private fb: FormBuilder,
     private overviewService: OverviewService,
     private notificationService: NotificationService,
-  ) { 
+  ) {
   }
 
   ngOnInit() {
@@ -59,7 +59,7 @@ export class AddUserComponent {
       "Type": 2,
       "IsActive": formvalue.status,
       "Reseller": {
-        "Id": Number(this.userData?.Dealer?.Id) 
+        "Id": Number(this.userData?.Dealer?.Id)
       }
     }
     this.overviewService.addCustomerUser(payload).subscribe((res:any) => {

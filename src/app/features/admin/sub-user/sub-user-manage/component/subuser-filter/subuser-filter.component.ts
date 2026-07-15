@@ -19,6 +19,11 @@ export class SubuserFilterComponent {
   customerData: any;
   selectedCustomer:any
   selectDealerCustomer: any;
+  showOptions = false;
+
+  toggleOptions() {
+    this.showOptions = !this.showOptions;
+  }
 
   constructor(
     private sharedService: SharedService,
@@ -86,6 +91,7 @@ export class SubuserFilterComponent {
 
   redirectTo(path: any, subUser: any) {
     this.addSubuser.emit(path)
+    this.showOptions = false
   }
 
 }

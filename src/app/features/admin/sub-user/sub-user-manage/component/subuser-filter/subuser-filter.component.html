@@ -15,13 +15,18 @@
                   </ng-select> -->
             </div>
         </div>
-        
+
         <div class="col-md-3">
             <div class="first-part">
-                <button class="btn btn-primary" (click)="redirectTo('add-subuser', '')"><i class="fa fa-plus" aria-hidden="true"></i>Add new user</button>     
+                <button class="btn btn-primary" (click)="toggleOptions()">
+                    <i class="fa fa-plus" aria-hidden="true"></i> Add new user
+                </button>
+                <div class="options" *ngIf="showOptions">
+                    <button class="option-btn" (click)="redirectTo('add-subuser', '')">Single User</button>
+                    <button class="option-btn" (click)="redirectTo('bulk-upload', '')">Bulk Upload</button>
+                </div>
             </div>
-           
+
         </div>
     </div>
 </div>
-

@@ -331,13 +331,13 @@ export class SubuserListComponent {
     this.selectColor = null;
     let url: any;
     if (event == 'add-subuser') {
-      this.selectedSubUserValue = null;
-      this.selectColor = null;
       // Route requires :id/:cusID parameters, using 0 as default since filters are removed
       url = `/admin/subuser/customer-sub-user/0/0/${event}`
+    } else if (event == 'bulk-upload') {
+      url = `/admin/subuser/${event}`
     }
     // Don't call announceCustomerAdded() when navigating - only call it after successful save/update
-    this.router.navigateByUrl(url);
+    if (url) this.router.navigateByUrl(url);
   }
 
   deletSubUser(subUser: any) {

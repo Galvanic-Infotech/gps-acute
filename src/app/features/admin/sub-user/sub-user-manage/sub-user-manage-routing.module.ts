@@ -4,6 +4,7 @@ import { SubUserManageComponent } from './pages/sub-user-manage/sub-user-manage.
 import { AddSubuserComponent } from './component/subuser-details/add-subuser/add-subuser.component';
 import { SubuserVehicleComponent } from './component/subuser-details/subuser-vehicle/subuser-vehicle.component';
 import { OutstandingContainerComponent } from './component/outstanding/outstanding-container.component';
+import { SubuserBulkUploadComponent } from './component/subuser-bulk-upload/subuser-bulk-upload.component';
 
 const routes: Routes = [
   {
@@ -16,6 +17,9 @@ const routes: Routes = [
   },
   {
     path: 'outstanding', component: OutstandingContainerComponent,
+  },
+  {
+    path: 'bulk-upload', component: SubuserBulkUploadComponent,
   }
 ];
 

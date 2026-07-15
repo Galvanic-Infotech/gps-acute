@@ -15,6 +15,7 @@ import { BillingConfigComponent } from './component/billing-config/billing-confi
 import { AddCreditComponent } from './component/add-credit/add-credit.component';
 import { OutstandingContainerComponent } from './component/outstanding/outstanding-container.component';
 import { OutstandingListComponent } from './component/outstanding/outstanding-list.component';
+import { SubuserBulkUploadComponent } from './component/subuser-bulk-upload/subuser-bulk-upload.component';
 
 
 @NgModule({
@@ -30,7 +31,8 @@ import { OutstandingListComponent } from './component/outstanding/outstanding-li
     BillingConfigComponent,
     AddCreditComponent,
     OutstandingContainerComponent,
-    OutstandingListComponent
+    OutstandingListComponent,
+    SubuserBulkUploadComponent
   ],
   imports: [
     CommonModule,

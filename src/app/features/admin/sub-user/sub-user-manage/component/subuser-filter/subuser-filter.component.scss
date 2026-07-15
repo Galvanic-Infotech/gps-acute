@@ -3,3 +3,32 @@
 //     justify-content: end;
 //     gap: 1rem;
 // }
+
+.first-part {
+    position: relative;
+}
+
+.options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border: 1px solid #ddd;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.option-btn {
+    background-color: rgba(85, 84, 84, 0.5);
+    color: white;
+    border: none;
+    padding: 10px;
+    cursor: pointer;
+}
+
+.option-btn:hover {
+    background-color: #000;
+}
