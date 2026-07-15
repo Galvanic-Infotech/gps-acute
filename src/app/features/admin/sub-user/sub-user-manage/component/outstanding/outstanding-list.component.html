@@ -65,8 +65,7 @@
                         <td>
                           <button
                             mat-icon-button
-                            [disabled]="!isBillingEnabled(row)"
-                            [title]="isBillingEnabled(row) ? '' : 'Billing not enabled'"
+                            [title]="isBillingEnabled(row) ? '' : 'Configure billing'"
                             (click)="onContextMenu($event, row)"
                           >
                             <mat-icon>more_vert</mat-icon>

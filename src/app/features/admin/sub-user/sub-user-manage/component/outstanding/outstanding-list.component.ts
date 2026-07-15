@@ -95,8 +95,7 @@ export class OutstandingListComponent {
           { path: 'billing-config', name: 'Billing Config' },
           { path: 'add-credit', name: 'Add Credit' },
         ]
-      : [];
-    if (!this.contextMenuItems.length) return;
+      : [{ path: 'billing-config', name: 'Billing Config' }];
     this.contextMenuPosition.x = event.clientX + 'px';
     this.contextMenuPosition.y = event.clientY + 'px';
     this.contextMenu.menuData = { row };
