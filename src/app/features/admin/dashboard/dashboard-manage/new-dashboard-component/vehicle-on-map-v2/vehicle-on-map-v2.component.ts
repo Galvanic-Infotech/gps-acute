@@ -1,6 +1,7 @@
 import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ChangeDetectorRef, Component, Inject, PLATFORM_ID } from '@angular/core';
 import * as L from 'leaflet';
+import 'leaflet.markercluster';
 import { catchError, EMPTY, filter, from, interval, map, Observable, of, Subject, Subscription, switchMap, take, takeUntil, tap, timer } from 'rxjs';
 import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { CommonService } from 'src/app/features/shared/services/common.service';
@@ -34,7 +35,10 @@ export class VehicleOnMapV2Component {
   data: any;
   selectedStatus: any;
   confirmedVehicleId: string | null = null;
+  private readonly CLUSTER_THRESHOLD = 150;
   private markers: L.Marker[] = [];
+  private markerClusterGroup: L.MarkerClusterGroup | null = null;
+  private useClustering = false;
   private infoVehicleWindows: L.Popup[] = [];
   private clickedMarker: L.Marker | any = null;
   animationRequest: any;
@@ -333,10 +337,46 @@ export class VehicleOnMapV2Component {
   private destroy$ = new Subject<void>();
 
 
+  private shouldUseClustering(): boolean {
+    return (this.vehilceOnMapdata?.length || 0) > this.CLUSTER_THRESHOLD;
+  }
+
+  private initMarkerClusterGroup(): void {
+    if (this.markerClusterGroup) {
+      this.map.removeLayer(this.markerClusterGroup);
+      this.markerClusterGroup = null;
+    }
+    this.markerClusterGroup = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 60,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      disableClusteringAtZoom: 18,
+    });
+    this.markerClusterGroup.addTo(this.map);
+  }
+
+  private getMarkerParentLayer(): L.Map | L.MarkerClusterGroup {
+    return this.useClustering && this.markerClusterGroup ? this.markerClusterGroup : this.map;
+  }
+
+  private syncClusteringMode(): void {
+    const shouldCluster = this.shouldUseClustering();
+    if (shouldCluster !== this.useClustering) {
+      this.clearMarkers();
+      this.useClustering = shouldCluster;
+    }
+    if (this.useClustering && !this.markerClusterGroup) {
+      this.initMarkerClusterGroup();
+    }
+  }
+
   plotVehicleonMap() {
     if (this.liveData) {
       return;
     }
+    this.syncClusteringMode();
     const vehicleObs$ = from(this.vehilceOnMapdata);
 
     vehicleObs$
@@ -397,9 +437,12 @@ export class VehicleOnMapV2Component {
 
               const popup = this.infoVehicleWindows[existingMarkerIndex];
               if (popup && this.clickedMarker === this.markers[existingMarkerIndex]) {
-                const clickedMarkerTooltip = this.clickedMarker.getTooltip();
-                const clickedMarkerText = clickedMarkerTooltip.getContent();
-                const vehicleInfo = this.vehilceOnMapdata.find((vehicle: any) => vehicle?.Device?.VehicleNo === clickedMarkerText);
+                const clickedMarkerText =
+                  this.clickedMarker.vehicleNo ||
+                  this.clickedMarker.getTooltip()?.getContent();
+                const vehicleInfo = this.vehilceOnMapdata.find(
+                  (v: any) => v?.Device?.VehicleNo === clickedMarkerText
+                );
 
                 if (vehicleInfo) {
                   const address = {
@@ -461,7 +504,9 @@ export class VehicleOnMapV2Component {
     };
     const marker: any = L.marker(newPosition, {
       icon: icon,
-    }).addTo(this.map);
+    }).addTo(this.getMarkerParentLayer());
+
+    marker.vehicleNo = vehicle?.Device?.VehicleNo;
 
     marker.bindTooltip(`${vehicle?.Device?.VehicleNo}`, {
       direction: 'bottom',
@@ -502,9 +547,17 @@ export class VehicleOnMapV2Component {
     this.addPopupListeners(popup, vehicle);
 
     this.markers.push(marker);
-    // this.map.setView(newPosition);
-    const bounds = L.latLngBounds(this.markers.map((m) => m.getLatLng()));
-    this.map.fitBounds(bounds);
+    if (!this.useClustering) {
+      const bounds = L.latLngBounds(this.markers.map((m) => m.getLatLng()));
+      if (bounds.isValid()) {
+        this.map.fitBounds(bounds);
+      }
+    } else if (this.markers.length === this.vehilceOnMapdata?.length && this.markerClusterGroup) {
+      const bounds = this.markerClusterGroup.getBounds();
+      if (bounds.isValid()) {
+        this.map.fitBounds(bounds);
+      }
+    }
   }
 
   addPopupListeners(popup: any, vehicle: any) {
@@ -533,7 +586,9 @@ export class VehicleOnMapV2Component {
 
   findExistingMarkerIndex(vehicleNo: string): any {
     return this.markers.findIndex(
-      (marker: any) => marker.getTooltip()?.getContent() === vehicleNo
+      (marker: any) =>
+        marker.vehicleNo === vehicleNo ||
+        marker.getTooltip()?.getContent() === vehicleNo
     );
   }
 
@@ -637,7 +692,6 @@ export class VehicleOnMapV2Component {
               if (keyPresent) {
                 html += generateIcon('fa-snowflake-o', 'AC', vehicle?.Peripherial?.AC);
                 html += generateIcon('fa-map-signs', 'Door', vehicle?.Peripherial?.Door);
-                html += generateIcon('fa-thermometer-empty', 'Temperature', vehicle?.Peripherial?.Temp);
               }
               html += generateImmobilizerIcon(vehicle);
               html += generateIcon('fa-location-dot', 'GPS', vehicle?.Eventdata?.GpsStatus);
@@ -1416,6 +1470,12 @@ export class VehicleOnMapV2Component {
         marker.remove();
       });
       this.markers = [];
+    }
+
+    if (this.markerClusterGroup) {
+      this.markerClusterGroup.clearLayers();
+      this.map.removeLayer(this.markerClusterGroup);
+      this.markerClusterGroup = null;
     }
 
     if (this.animationRequest) {
