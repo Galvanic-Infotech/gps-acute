@@ -194,17 +194,25 @@ export class VehicleOnMapV2Component {
       };
       const statusInfo = statusMap[statusStr.toLowerCase()] || { Status: 0, SubStatus: 0 };
 
-      // Check validity for expired status
+      // Expired = status is point/customer recharge expired (matches native app)
+      // Expired Soon = nextRechargeDate within next 7 days
       let isExpired = false;
       let isExpiredSoon = false;
-      if (item?.validity) {
+      const statusLower = statusStr.toLowerCase();
+      if (statusLower === 'point expired' || statusLower === 'customer recharge expired') {
+        isExpired = true;
+      } else if (item?.validity?.nextRechargeDate) {
         const nextRecharge = new Date(item.validity.nextRechargeDate);
-        const today = new Date();
-        const daysDiff = Math.ceil((nextRecharge.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysDiff < 0) {
-          isExpired = true;
-        } else if (daysDiff <= 7) {
-          isExpiredSoon = true;
+        if (!isNaN(nextRecharge.getTime())) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          nextRecharge.setHours(0, 0, 0, 0);
+          const daysDiff = Math.round(
+            (nextRecharge.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+          );
+          if (daysDiff >= 0 && daysDiff <= 7) {
+            isExpiredSoon = true;
+          }
         }
       }
 
@@ -291,7 +299,7 @@ export class VehicleOnMapV2Component {
       });
     } else if (this.selectedStatus === 'Point Expired') {
       this.vehicleData = data.filter((res: any) => res?.isexpired === 1);
-    } else if (this.selectedStatus === 'Expired Soon') {
+    } else if (this.selectedStatus === 'Expired Soon' || this.selectedStatus === 'Exp. Soon') {
       this.vehicleData = data.filter((res: any) => res?.isexpiredsoon === 1);
     } else if (this.selectedStatus === 'Expired') {
       this.vehicleData = data.filter((res: any) => res?.isexpired === 1);

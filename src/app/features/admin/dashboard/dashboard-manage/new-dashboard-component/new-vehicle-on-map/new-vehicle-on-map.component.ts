@@ -226,7 +226,7 @@ export class NewVehicleOnMapComponent {
       this.vehicleData = data.filter(
         (res: any) => res?.Status == 1 && res?.SubStatus == 3
       );
-    } else if (this.selectedStatus === 'Expired Soon') {
+    } else if (this.selectedStatus === 'Expired Soon' || this.selectedStatus === 'Exp. Soon') {
       this.vehicleData = data.filter((res: any) =>  res?.isexpiredsoon === 1);
     } else if (this.selectedStatus === 'Expired') {
       this.vehicleData = data.filter((res: any) => res?.isexpired === 1);

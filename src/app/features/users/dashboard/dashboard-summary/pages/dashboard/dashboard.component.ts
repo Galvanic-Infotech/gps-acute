@@ -300,10 +300,14 @@ export class DashboardComponent {
       this.vehicleData = data.filter(
         (res: any) => res?.Status == 1 && res?.SubStatus == 3
       );
-    } else if (this.selectedStatus === 'Expired Soon') {
-      this.vehicleData = data.filter((res: any) =>  res?.Status == 1 && res?.SubStatus == 4);      
+    } else if (this.selectedStatus === 'Expired Soon' || this.selectedStatus === 'Exp. Soon') {
+      this.vehicleData = data.filter((res: any) =>
+        res?.isexpiredsoon === 1 || (res?.Status == 1 && res?.SubStatus == 4)
+      );
     } else if (this.selectedStatus === 'Expired') {
-      this.vehicleData = data.filter((res: any) => res?.Status == 2);
+      this.vehicleData = data.filter((res: any) =>
+        res?.isexpired === 1 || res?.Status == 2
+      );
     } else if (
       this.selectedStatus === 'All' ||
       this.selectedStatus == undefined ||

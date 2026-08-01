@@ -67,8 +67,12 @@ export class SwiperComponent {
     this.runningCount = this.vehicleStauts?.filter((res: any) => res?.Status == 1 && res?.SubStatus == 1);
     this.stopCount = this.vehicleStauts?.filter((res: any) => res?.Status == 1 && res?.SubStatus == 2);
     this.idleCount = this.vehicleStauts?.filter((res: any) => res?.Status == 1 && res?.SubStatus == 3);
-    this.expiredSoon = this.vehicleStauts?.filter((res: any) => res?.Status == 1 && res?.SubStatus == 4);
-    this.expiredCount = this.vehicleStauts?.filter((res: any) => res?.Status == 2);
+    this.expiredSoon = this.vehicleStauts?.filter((res: any) =>
+      res?.isexpiredsoon === 1 || (res?.Status == 1 && res?.SubStatus == 4)
+    );
+    this.expiredCount = this.vehicleStauts?.filter((res: any) =>
+      res?.isexpired === 1 || res?.Status == 2
+    );
   }
 
   ngOnChanges() {
