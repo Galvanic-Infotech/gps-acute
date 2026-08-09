@@ -13,7 +13,7 @@
 
                 <div class="row mb-3" *ngIf="deviceData && deviceData.length > 0">
                     <div class="col-md-9">
-                        <input type="text" class="form-control" placeholder="Search by Vehicle No, Device ID or Sim No..."
+                        <input type="text" class="form-control" placeholder="Search by Vehicle No, Device IMEI or Sim No..."
                             [(ngModel)]="searchTerm" (input)="applySearch()">
                     </div>
                     <div class="col-md-3 text-end">
@@ -68,8 +68,8 @@
                                                     </td>
                                                     <td>
                                                         <a (mouseenter)="showCopyIcon = i" style="cursor: pointer;" [ngStyle]="{'color': (showCopyIcon === i) ? 'red' : 'blue','display': (showCopyIcon === i) ? 'inline-flex' : '', 'gap': (showCopyIcon === i) ? '8px' : ''}" (mouseleave)="showCopyIcon = null">
-                                                            {{ row?.deviceUid || row?.deviceId || 'N/A' }}
-                                                            <i *ngIf="showCopyIcon === i" (click)="copyContent(row?.deviceUid || row?.deviceId, i)" class="fa-regular fa-copy cursor-pointer" [title]="copy === true && showCopyIcon === i ? 'Copied' : 'Copy'"></i>
+                                                            {{ row?.deviceImei || 'N/A' }}
+                                                            <i *ngIf="showCopyIcon === i" (click)="copyContent(row?.deviceImei, i)" class="fa-regular fa-copy cursor-pointer" [title]="copy === true && showCopyIcon === i ? 'Copied' : 'Copy'"></i>
                                                         </a>
                                                     </td>
                                                     <td>

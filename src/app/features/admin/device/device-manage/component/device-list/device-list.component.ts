@@ -167,7 +167,7 @@ export class DeviceListComponent {
   setInitialValue() {
     this.columns = [
       { key: 'vehicleNo', title: 'Vehicle No' },
-      { key: 'deviceUid', title: 'Unique ID' },
+      { key: 'deviceImei', title: 'Device IMEI' },
       { key: 'deviceType', title: 'Device Type' },
       { key: 'simPhoneNumber', title: 'Primary Sim No.' },
       { key: 'installationOn', title: 'Installation Date' },
@@ -235,10 +235,10 @@ export class DeviceListComponent {
     } else {
       this.filteredDeviceData = this.deviceData.filter((row: any) => {
         const vehicleNo = (row?.vehicleNo || '').toLowerCase();
-        const deviceUid = (row?.deviceUid || '').toLowerCase();
+        const deviceImei = (row?.deviceImei || '').toLowerCase();
         const deviceId = (row?.deviceId || '').toString().toLowerCase();
         const simNo = (row?.simPhoneNumber || '').toLowerCase();
-        return vehicleNo.includes(term) || deviceUid.includes(term) || deviceId.includes(term) || simNo.includes(term);
+        return vehicleNo.includes(term) || deviceImei.includes(term) || deviceId.includes(term) || simNo.includes(term);
       });
     }
     this.count = this.filteredDeviceData.length;
