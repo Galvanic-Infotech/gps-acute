@@ -130,6 +130,7 @@ export const API_CONSTANTS: any = {
   duplicateDevice: 'v1/CustomerDevice/DuplicateDeviceId/0/{searchId}',
   deviceTimeValidity: 'DeviceValidity/DeviceValidity/{min}/{deviceId}',
   userSearch: 'CustomerUser/OpenSearch/{custmerId}',
+  hierarchySearch: 'Hierarchy/search?searchTerm={searchTerm}',
   createFitment:'fitment',
   showFitment:'fitment/{id}',
   fitnmentImage:'fitment/PostFile/a',

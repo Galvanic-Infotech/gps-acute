@@ -17,4 +17,11 @@ export class SharedSearchService {
     .get(url)
     .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
+
+  hierarchySearch(searchTerm: string): Observable<any> {
+    let url = API_CONSTANTS.hierarchySearch.replace("{searchTerm}", encodeURIComponent(searchTerm))
+    return this.apiService
+    .get(url)
+    .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
 }

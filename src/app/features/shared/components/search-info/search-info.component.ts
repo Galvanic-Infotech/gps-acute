@@ -1,5 +1,4 @@
 import { Component, Input } from '@angular/core';
-import { SharedUserService } from '../shared-user/services/shared-user.service';
 import { SharedSearchService } from '../../shared-service/shared.service';
 
 @Component({
@@ -19,6 +18,7 @@ export class SearchInfoComponent {
   spinnerLoading: boolean = false
   tableLoading: boolean = false
   userTableLoading: boolean = false
+  userSearchError = '';
   navigation: Array<any> = [
     {
       name: 'Detail',
@@ -85,8 +85,7 @@ export class SearchInfoComponent {
   selectColour: any;
 
   constructor(
-    private sharedService: SharedSearchService,
-    private sharedUserService: SharedUserService
+    private sharedService: SharedSearchService
   ) {
   }
   ngOnInit() {
@@ -131,9 +130,17 @@ export class SearchInfoComponent {
     this.showUserContent = true
     this.openUserNave = false
     this.openCloseNave = false
-    this.sharedUserService.getUserbyId(this.searchDefaultValue).subscribe((res: any) => {
-      this.userListById = res?.body?.Result?.Data
+    this.userSearchError = ''
+    this.userListById = []
+    this.sharedService.hierarchySearch(this.searchDefaultValue).subscribe((res: any) => {
       this.userTableLoading = false;
+      const body = res?.body ?? res;
+      if (body?.result && Array.isArray(body?.data)) {
+        this.userListById = body.data;
+      } else {
+        this.userListById = [];
+        this.userSearchError = typeof body?.data === 'string' ? body.data : 'User not found';
+      }
     })
   }
 
@@ -170,13 +177,9 @@ export class SearchInfoComponent {
     ]
 
     this.userColumns = [
-      { key: 'Dealer', title: 'Dealer' },
-      { key: 'Customer', title: 'Customer' },
-      { key: 'Installed On', title: 'Login Id' },
-      { key: 'Vehicle No.', title: 'Password' },
-      { key: 'Sim Phone No.', title: 'Mobile' },
-      { key: 'IMEI', title: 'Email' },
-      { key: 'Action', title: 'Action' },
+      { key: 'userName', title: 'User Name' },
+      { key: 'loginId', title: 'Login Id' },
+      { key: 'isActive', title: 'Status' },
     ]
   }
 }

@@ -96,21 +96,16 @@
             <div class="heading">
                 <strong *ngFor="let vehicleHeading of userColumns" class="heading-item">{{vehicleHeading.title}}</strong>
             </div>
-            <div class="body-content" [ngClass]="{'active': selectColour?.Customer?.Id === item?.Customer?.Id}" *ngFor="let item of userListById; let i = index">
+            <div class="body-content" *ngFor="let item of userListById; let i = index">
                 <div class="body-item">
-                    <p>{{item?.Dealer?.Name}}</p>
-                    <p>{{item?.Customer?.CustomerName}}</p>
-                    <p>{{item?.Customer?.User?.LoginId}}</p>
-                    <p>{{item?.Customer?.User?.Password}}</p>
-                    <p>{{item?.Customer?.ContactNumber}}</p>
-                    <p>{{item?.Customer?.Email}}</p>
-                    <p><span class="show-detail" (click)="userDetail(item)">Detail</span></p>
+                    <p>{{item?.userName}}</p>
+                    <p>{{item?.loginId}}</p>
+                    <p>{{item?.isActive === 1 ? 'Active' : 'Inactive'}}</p>
                 </div>
-
             </div>
             <div class="text-center"
-            *ngIf="userListById && userListById.length == 0 || userListById == null"
-            style="width: 100%;">No Data Available</div>
+            *ngIf="(!userListById || userListById.length == 0)"
+            style="width: 100%;">{{ userSearchError || 'No Data Available' }}</div>
         </div>
 
         <!-- <div id="datatable_wrapper" class="dataTables_wrapper no-footer">
