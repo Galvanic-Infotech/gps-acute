@@ -23,6 +23,7 @@ import { ViewLinkedUsersComponent } from '../device/view-linked-users/view-linke
 import { LinkPlanComponent } from '../device/link-plan/link-plan.component';
 import { BulkLinkUserComponent } from '../device/bulk-link-user/bulk-link-user.component';
 import { UpdateRechargeComponent } from '../device/update-recharge/update-recharge.component';
+import { UnlinkConfirmModalComponent } from '../device/unlink-confirm-modal/unlink-confirm-modal.component';
 import * as XLSX from 'xlsx';
 
 
@@ -647,6 +648,59 @@ export class DeviceListComponent {
       LinkPlanComponent,
       Object.assign(initialState, { class: 'modal-md modal-dialog-centered' })
     );
+  }
+
+  openUnlinkPlan() {
+    if (!this.selectedRows || this.selectedRows.length === 0) {
+      this.notificationService.showError('Please select at least one device');
+      return;
+    }
+
+    const count = this.selectedRows.length;
+    const modalRef = this.bsmodelService.show(UnlinkConfirmModalComponent, {
+      initialState: {
+        message: `Unlink plan from ${count} selected device(s)?`
+      },
+      class: 'modal-md modal-dialog-centered',
+      ignoreBackdropClick: true
+    });
+
+    modalRef?.content?.mapdata?.subscribe((result: any) => {
+      if (result?.confirmed === true) {
+        this.performUnlinkPlan();
+      }
+    });
+  }
+
+  private performUnlinkPlan() {
+    const deviceIds = this.selectedRows
+      .map((d: any) => Number(d.id || d.Id))
+      .filter((id: number) => !isNaN(id));
+
+    if (deviceIds.length === 0) {
+      this.notificationService.showError('No valid device IDs selected');
+      return;
+    }
+
+    this.spinnerLoading = true;
+    this.deviceManageService.unlinkPlan(deviceIds).subscribe((res: any) => {
+      this.spinnerLoading = false;
+      const success = res?.body?.result ?? res?.result ?? (res?.status === 200 || res?.status === 201 || res?.status === 204);
+      if (success) {
+        const msg = res?.body?.data || res?.body?.message || res?.data || 'Plan unlinked successfully';
+        this.notificationService.showSuccess(typeof msg === 'string' ? msg : 'Plan unlinked successfully');
+        this.selectedRows = [];
+        this.selectAll = false;
+        this.deviceData?.forEach((row: any) => row.selected = false);
+        this.refreshCustomerService.announceCustomerAdded();
+      } else {
+        const errMsg = res?.body?.message ?? res?.error?.message ?? res?.message ?? 'Failed to unlink plan';
+        this.notificationService.showError(typeof errMsg === 'string' ? errMsg : 'Failed to unlink plan');
+      }
+    }, () => {
+      this.spinnerLoading = false;
+      this.notificationService.showError('Failed to unlink plan');
+    });
   }
 
   openBulkLinkUser() {

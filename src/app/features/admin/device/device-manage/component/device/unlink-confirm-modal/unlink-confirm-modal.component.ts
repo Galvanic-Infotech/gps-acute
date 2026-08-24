@@ -11,6 +11,8 @@ export class UnlinkConfirmModalComponent {
   @Input() user: any = null;
   /** Device label for display (set via modal initialState) */
   @Input() deviceLabel: string = '';
+  /** Optional custom message (e.g. unlink plan from selected devices) */
+  @Input() message: string = '';
 
   unlinkConfirmText = '';
   readonly UNLINK_CONFIRM = 'UNLINK';

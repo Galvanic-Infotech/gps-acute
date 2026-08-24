@@ -273,6 +273,13 @@ export class DeviceManageService {
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
 
+  unlinkPlan(deviceIds: number[]): Observable<any> {
+    let url = API_CONSTANTS.unlinkPlan;
+    return this.apiService
+      .post(url, deviceIds)
+      .pipe(catchError((error: HttpErrorResponse) => of(error)));
+  }
+
   createDeviceMapping(payload: any): Observable<any> {
     let url = API_CONSTANTS.createDeviceMapping;
     return this.apiService

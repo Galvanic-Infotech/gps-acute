@@ -3,7 +3,8 @@
     <button type="button" class="btn-close btn-close-white" aria-label="Close" (click)="cancel()"></button>
 </div>
 <div class="modal-body">
-    <p class="mb-3" *ngIf="user">
+    <p class="mb-3" *ngIf="message">{{ message }}</p>
+    <p class="mb-3" *ngIf="!message && user">
         Unlink <strong>"{{ userName }}"</strong>
         <span *ngIf="deviceLabel"> from device <strong>{{ deviceLabel }}</strong></span>?
     </p>

@@ -159,6 +159,7 @@ export const API_CONSTANTS: any = {
   publicTrack: 'VehicleList/Track/{key}',
   shareUrl: 'ShareUrl',
   linkPlan: 'Billing/LinkPlan',
+  unlinkPlan: 'device/UnlinkPlan',
   billingConfig: 'Billing/BillingConfig',
   billingConfigByDealer: 'Billing/BillingConfig/{id}',
   runBillingSummary: 'Billing/BillingConfig/runBillingSummary',
