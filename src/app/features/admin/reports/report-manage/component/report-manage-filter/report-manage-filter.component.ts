@@ -12,6 +12,7 @@ import { StorageService } from 'src/app/features/http-services/storage.service';
 import { DeviceManageService } from 'src/app/features/admin/device/device-manage/service/device-manage.service';
 import { API_CONSTANTS } from 'src/app/features/shared/constant/API-CONSTANTS';
 import { buildDistanceVsSpeedRows } from 'src/app/features/shared/utils/distance-vs-speed.util';
+import { buildPositionReportRows } from 'src/app/features/shared/utils/position-report.util';
 import {
   getReportDateRangeErrorMessage,
   isReportDateRangeValid,
@@ -115,6 +116,10 @@ export class ReportManageFilterComponent {
     {
       id: 12,
       title: 'Distance vs Speed',
+    },
+    {
+      id: 13,
+      title: 'Position Report',
     },
   ];
   durationcontrol: any;
@@ -364,6 +369,11 @@ export class ReportManageFilterComponent {
     return this.multiVehicleReportTypes.has(reportName);
   }
 
+  // reports served by the raw history endpoint instead of the report APIs
+  isHistoryReport(reportName: string): boolean {
+    return reportName === 'Distance vs Speed' || reportName === 'Position Report';
+  }
+
   private syncSelectedVehicles(value: any): void {
     let vehicles = this.normalizeSelectedVehicles(value);
     if (!this.allowMultipleVehicles && vehicles.length > 1) {
@@ -443,7 +453,8 @@ export class ReportManageFilterComponent {
       event == 'Idle' ||
       event == 'Trip Report' ||
       event == 'Overspeed Report' ||
-      event == 'Movement Summary'
+      event == 'Movement Summary' ||
+      event == 'Position Report'
     ) {
       this.isLocation = true;
     } else {
@@ -699,7 +710,7 @@ export class ReportManageFilterComponent {
       formValue.filtername === 'temperature Report' ||
       formValue.filtername === 'Duration Report' ||
       formValue.filtername === 'Movement Summary' ||
-      formValue.filtername === 'Distance vs Speed';
+      this.isHistoryReport(formValue.filtername);
 
     let payload: any = {
       DeviceId:
@@ -711,7 +722,7 @@ export class ReportManageFilterComponent {
           formValue.filtername === 'Duration Report' ||
           formValue.filtername === 'temperature Report' ||
           formValue.filtername === 'GeoFence Report' ||
-          formValue.filtername === 'Distance vs Speed'
+          this.isHistoryReport(formValue.filtername)
           ? (deviceData.length === 1 ? deviceData[0] : deviceData)
           : formValue.filtername === 'Movement Summary'
             ? Number(formValue?.vehicledata)
@@ -778,8 +789,8 @@ export class ReportManageFilterComponent {
       Object.assign(payload, cleanPayload);
     }
 
-    // Special handling for Distance vs Speed - use history endpoint
-    if (formValue.filtername === 'Distance vs Speed') {
+    // Special handling for Distance vs Speed / Position Report - use history endpoint
+    if (this.isHistoryReport(formValue.filtername)) {
       let deviceIdValue: any;
       if (Array.isArray(payload.DeviceId) && payload.DeviceId.length > 0) {
         deviceIdValue = payload.DeviceId[0];
@@ -832,6 +843,7 @@ export class ReportManageFilterComponent {
       'Duration Report': 'reports/distancereport/summary',
       'Movement Summary': 'history',
       'Distance vs Speed': API_CONSTANTS.historyApi,
+      'Position Report': API_CONSTANTS.historyApi,
     };
 
     const reportType = this.reportTypeMapping[formValue.filtername];
@@ -964,7 +976,7 @@ export class ReportManageFilterComponent {
       formValue.filtername === 'temperature Report' ||
       formValue.filtername === 'Duration Report' ||
       formValue.filtername === 'Movement Summary' ||
-      formValue.filtername === 'Distance vs Speed';
+      this.isHistoryReport(formValue.filtername);
 
     let payload: any = {
       DeviceId: deviceId,
@@ -1005,7 +1017,7 @@ export class ReportManageFilterComponent {
       };
     }
 
-    if (formValue.filtername === 'Distance vs Speed') {
+    if (this.isHistoryReport(formValue.filtername)) {
       return {
         DeviceId: String(deviceId),
         FromTime: fromDateISO,
@@ -1050,7 +1062,8 @@ export class ReportManageFilterComponent {
       filterName === 'GeoFence Report' ||
       filterName === 'Distance' ||
       filterName === 'Duration Report' ||
-      filterName === 'Distance vs Speed'
+      filterName === 'Distance vs Speed' ||
+      filterName === 'Position Report'
     ) {
       return [];
     }
@@ -1539,6 +1552,11 @@ export class ReportManageFilterComponent {
                 reportData,
                 vehicleName,
                 deviceImei
+              );
+            } else if (formValue.filtername === 'Position Report') {
+              this.data = buildPositionReportRows(
+                reportData || [],
+                this.selectedVehicles[0]?.text || ''
               );
             } else {
               // Generic check for all filter types

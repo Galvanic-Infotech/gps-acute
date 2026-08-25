@@ -603,6 +603,77 @@
     </div>
 
 
+    <div class="report-part mt-3" *ngIf="filterType == 'Position Report'">
+        <div class="card mt-3">
+            <div class="card-body">
+                <div id="datatable_wrapper" class="dataTables_wrapper no-footer">
+                    <div class="dataTables_scroll">
+                        <div class="dataTables_scrollBody">
+                            <table id="datatable" #TABLE
+                                class="table table-striped nowrap dataTable no-footer dtr-inline" role="grid"
+                                style="width: 100%" width="100%">
+                                <thead>
+                                    <tr role="row">
+                                        <th>Server Time</th>
+                                        <th>Fix Time</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Address</th>
+                                        <th>Speed</th>
+                                        <th>GPS</th>
+                                        <th>Ignition</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let row of positionData | paginate : {
+                                        id: 'position',
+                                        itemsPerPage: tableSize,
+                                        currentPage: positionPage,
+                                        totalItems: positionData.length}; let i = index">
+                                        <td>{{ row?.serverTime | date: 'EEE, MMM d yyyy h:mm:ss a' }}</td>
+                                        <td>{{ row?.fixTime | date: 'EEE, MMM d yyyy h:mm:ss a' }}</td>
+                                        <td>{{ row?.latitude }}</td>
+                                        <td>{{ row?.longitude }}</td>
+                                        <td>
+                                            <ng-container *ngIf="isLocation === 1; else positionAddressBlock">
+                                                {{ row?.latitude }}, {{ row?.longitude }}
+                                            </ng-container>
+                                            <ng-template #positionAddressBlock>
+                                                {{ viewAddress('start', row?.loc, positionRowIndex(i)) }}
+                                                <ng-container
+                                                    *ngIf="selectedStartIndexes.includes(positionRowIndex(i)); else positionViewAddress">
+                                                    <div *ngIf="startAddresses[positionRowIndex(i)]; else positionLoader">
+                                                        {{ startAddresses[positionRowIndex(i)] }}
+                                                    </div>
+                                                    <ng-template #positionLoader>
+                                                        <div class="cssload-loading"><i></i><i></i><i></i><i></i></div>
+                                                    </ng-template>
+                                                </ng-container>
+                                                <ng-template #positionViewAddress>
+                                                    View Address
+                                                </ng-template>
+                                            </ng-template>
+                                        </td>
+                                        <td>{{ row?.speed }}km/hr</td>
+                                        <td>{{ row?.gps }}</td>
+                                        <td>{{ row?.ignition }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="text-center" *ngIf="!positionData || positionData.length === 0"
+                                style="width: 100%;">No Data Available</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pagination-data" *ngIf="positionData && positionData.length > 0">
+                    <pagination-controls id="position" previousLabel="Prev" nextLabel="Next"
+                        (pageChange)="positionPage = $event">
+                    </pagination-controls>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="report-part mt-3" *ngIf="filterType == 'Distance vs Speed'">
         <div class="total-duration">
             <div class="chips-container">

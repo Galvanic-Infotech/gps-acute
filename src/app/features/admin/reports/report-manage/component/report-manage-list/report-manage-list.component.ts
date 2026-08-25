@@ -18,6 +18,10 @@ import { BsModalRef, BsModalService, ModalOptions } from 'ngx-bootstrap/modal';
 import { LocationInMapComponent } from 'src/app/features/shared/components/location-in-map/location-in-map.component';
 import autoTable from 'jspdf-autotable';
 import { NotificationService } from 'src/app/features/http-services/notification.service';
+import {
+  POSITION_REPORT_COLUMNS,
+  buildPositionReportExportRows,
+} from 'src/app/features/shared/utils/position-report.util';
 
 interface VehicleData {
   VehicleNo: string;
@@ -84,6 +88,8 @@ export class ReportManageListComponent {
   distanceVsSpeedData: any[] = [];
   distanceVsSpeedTotalRecords: number = 0;
   distanceVsSpeedTotalDistance: number = 0;
+  positionData: any[] = [];
+  positionPage = 1;
 
   constructor(
     private commonService: CommonService,
@@ -203,6 +209,11 @@ export class ReportManageListComponent {
       this.groupingMovement()
     } else if (this.filterType === 'GeoFence Report') {
       this.groupingGeofence();
+    } else if (this.filterType === 'Position Report') {
+      this.positionData = this.vehicle || [];
+      this.positionPage = 1;
+      this.startAddresses = [];
+      this.selectedStartIndexes = [];
     } else if (this.filterType === 'Distance vs Speed') {
       this.distanceVsSpeedData = this.vehicle || [];
       this.distanceVsSpeedTotalRecords = this.distanceVsSpeedData.reduce((sum: number, item: any) => sum + (item.totalRecords || 0), 0);
@@ -644,6 +655,39 @@ export class ReportManageListComponent {
       }
       this.distanceVsSpeedExcel()
     }
+    if (this.filterType === 'Position Report') {
+      if (!this.positionData || this.positionData.length === 0) {
+        this.notificationService.showError('No data available to export');
+        return;
+      }
+      this.positionReportExcel()
+    }
+  }
+
+  positionRowIndex(i: number): number {
+    return (this.positionPage - 1) * Number(this.tableSize) + i;
+  }
+
+  positionReportExcel() {
+    const rows = buildPositionReportExportRows(this.positionData, this.startAddresses);
+    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet([POSITION_REPORT_COLUMNS, ...rows]);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Position Report');
+    XLSX.writeFile(wb, 'PositionReport.xlsx');
+  }
+
+  positionReportPdf() {
+    const doc = new jsPDF('l');
+    doc.setFontSize(18);
+    doc.text('Position Report', 14, 22);
+    autoTable(doc, {
+      head: [POSITION_REPORT_COLUMNS],
+      body: buildPositionReportExportRows(this.positionData, this.startAddresses),
+      startY: 30,
+      styles: { fontSize: 7 },
+      margin: { top: 20, right: 5, bottom: 20, left: 5 },
+    });
+    doc.save('PositionReport.pdf');
   }
 
   async movmentSummary(groupedData: any[]) {
@@ -1185,6 +1229,13 @@ export class ReportManageListComponent {
     }
     if (this.filterType === 'Distance vs Speed') {
       this.distanceVsSpeedPdf()
+    }
+    if (this.filterType === 'Position Report') {
+      if (!this.positionData || this.positionData.length === 0) {
+        this.notificationService.showError('No data available to export');
+        return;
+      }
+      this.positionReportPdf()
     }
   }
 

@@ -13,6 +13,7 @@ import { MatDatepicker } from '@angular/material/datepicker';
 import { DashboardService } from 'src/app/features/users/dashboard/dashboard-summary/services/dashboard.service';
 import { API_CONSTANTS } from 'src/app/features/shared/constant/API-CONSTANTS';
 import { buildDistanceVsSpeedRows } from 'src/app/features/shared/utils/distance-vs-speed.util';
+import { buildPositionReportRows } from 'src/app/features/shared/utils/position-report.util';
 import {
   getReportDateRangeErrorMessage,
   isReportDateRangeValid,
@@ -77,6 +78,10 @@ export class ReportsFilterComponent {
     {
       id: 12,
       title: 'Distance vs Speed',
+    },
+    {
+      id: 13,
+      title: 'Position Report',
     }
   ];
   isMultiple = false;
@@ -173,7 +178,7 @@ export class ReportsFilterComponent {
           }
         }
 
-        if(this.currentPath  == 'Stop' || this.currentPath == 'Idle' || this.currentPath == 'Trip Report' || this.currentPath == 'Overspeed Report' || this.currentPath == 'Movement Summary') {         
+        if(this.currentPath  == 'Stop' || this.currentPath == 'Idle' || this.currentPath == 'Trip Report' || this.currentPath == 'Overspeed Report' || this.currentPath == 'Movement Summary' || this.currentPath == 'Position Report') {         
           this.isLocation = true;
         } else {
           this.isLocation = false;
@@ -383,7 +388,7 @@ export class ReportsFilterComponent {
       return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${offsetSign}${offsetHours}:${offsetMinutes}`;
     };
 
-    const useHistoryDateFormat = formValue.filtername === 'Distance vs Speed';
+    const useHistoryDateFormat = this.isHistoryReport(formValue.filtername);
     const fromTime = useHistoryDateFormat
       ? formatDateWithTimezone(new Date(formValue.fromDate))
       : formatDate(formValue.fromDate, 'yyyy-MM-dd HH:mm:ss', 'en-US');
@@ -391,7 +396,7 @@ export class ReportsFilterComponent {
       ? formatDateWithTimezone(new Date(formValue.toDate))
       : formatDate(formValue.toDate, 'yyyy-MM-dd HH:mm:ss', 'en-US');
 
-    payload = formValue.filtername === 'Distance vs Speed'
+    payload = this.isHistoryReport(formValue.filtername)
       ? {
           DeviceId: String(deviceData[0]),
           FromTime: fromTime,
@@ -443,7 +448,8 @@ export class ReportsFilterComponent {
       'Temperature Report': 'Temp',
       'Alert Report': 'Alert',
       'Movement Summary' : 'Movement',
-      'Distance vs Speed': API_CONSTANTS.historyApi
+      'Distance vs Speed': API_CONSTANTS.historyApi,
+      'Position Report': API_CONSTANTS.historyApi
       // 'Overspeed Report':'Overspeed/OverSpeedlimitReport'
     };
 
@@ -474,7 +480,7 @@ export class ReportsFilterComponent {
             }
 
             let reportData =
-              formValue.filtername === 'Distance vs Speed'
+              this.isHistoryReport(formValue.filtername)
                 ? res?.body?.data || res?.body?.Data || res?.data
                 : res?.body?.Result?.Data;
 
@@ -521,6 +527,11 @@ export class ReportsFilterComponent {
                 vehicleName,
                 deviceImei
               );
+            } else if (formValue.filtername === 'Position Report') {
+              this.data = buildPositionReportRows(
+                reportData || [],
+                this.selectedVehicles[0]?.text || ''
+              );
             } else {
               // Generic check for all filter types
               if (!reportData || reportData.length === 0) {
@@ -555,7 +566,7 @@ export class ReportsFilterComponent {
     };
 
     const buildPayloadForDevice = (deviceId: string | number) => {
-      if (formValue.filtername === 'Distance vs Speed') {
+      if (this.isHistoryReport(formValue.filtername)) {
         return {
           DeviceId: String(deviceId),
           FromTime: fromTime,
@@ -613,7 +624,7 @@ export class ReportsFilterComponent {
     }
 
     payload =
-      deviceData.length > 0 && formValue.filtername !== 'Distance vs Speed'
+      deviceData.length > 0 && !this.isHistoryReport(formValue.filtername)
         ? buildPayloadForDevice(deviceData[0])
         : payload;
 
@@ -668,6 +679,11 @@ export class ReportsFilterComponent {
     return this.multiVehicleReportTypes.has(reportName);
   }
 
+  // reports served by the raw history endpoint instead of the report APIs
+  isHistoryReport(reportName: string): boolean {
+    return reportName === 'Distance vs Speed' || reportName === 'Position Report';
+  }
+
   private normalizeSelectedVehicles(value: any): any[] {
     if (!value) {
       return [];
@@ -713,7 +729,7 @@ export class ReportsFilterComponent {
     if (event == 'Alert Report') {
       this.getAlertData();
     }
-    if(event == 'Stop' || event == 'Idle' || event == 'Trip Report' || event == 'Overspeed Report' ||event == 'Movement Summary') {
+    if(event == 'Stop' || event == 'Idle' || event == 'Trip Report' || event == 'Overspeed Report' ||event == 'Movement Summary' || event == 'Position Report') {
       this.isLocation = true;
     } else {
       this.isLocation = false;

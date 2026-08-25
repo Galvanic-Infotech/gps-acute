@@ -306,6 +306,11 @@ export const menu =
               "name": 'Movement Summary',
               "path": "/user/reports/vehicle-report/Movement-Summary",
             },
+            {
+              "id": 12,
+              "name": 'Position Report',
+              "path": "/user/reports/vehicle-report/Position-Report",
+            },
             // {
             //   "id": 11,
             //   "name": 'Overspeed Report',
