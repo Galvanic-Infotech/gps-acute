@@ -227,7 +227,8 @@ export class VehicleOnMapV2Component {
           Id: item?.device?.id || 0,
           SoftOdometer: item?.position?.details?.odometer ?? item?.device?.details?.lastOdometer ?? 0
         },
-        TotalDistance: (item?.position?.details?.totalDistance - (item?.device?.details?.lastOdometer ?? 0)) || 0,
+        // Today km in meters: (totalDistance - lastOdometer); display divides by 1000
+        TotalDistance: this.getDayDistanceMeters(item),
         Eventdata: {
           Latitude: item?.position?.latitude || 0,
           Longitude: item?.position?.longitude || 0,
@@ -678,12 +679,12 @@ export class VehicleOnMapV2Component {
                 <span><strong>External Voltage:</strong> ${this.checkvoltage(vehicle?.Eventdata?.EPC ?? vehicle?._original?.position?.details?.extVolt ?? vehicle?._original?.position?.details?.adc1)}</span>
               </div>
               <div class="col-md-6">
-                <span><strong>Total Distance:</strong> ${this.updateOdometer(vehicle?._original?.device?.details?.lastOdometer)}</span>
+                <span><strong>Total Distance:</strong> ${this.formatDayDistance(vehicle?.TotalDistance)} Km</span>
               </div>
             </div>
             <div class="row mb-2">
               <div class="col-md-12">
-                <span><strong>Odometer:</strong> ${this.formatDayDistance(vehicle?.TotalDistance ?? vehicle?._original?.position?.details?.totalDistance ?? this.dayDistanceValue)} Km</span>
+                <span><strong>Odometer:</strong> ${this.formatDayDistance(vehicle?._original?.position?.details?.totalDistance)} Km</span>
               </div>
             </div>
             <div class="row mb-2">
@@ -883,6 +884,16 @@ export class VehicleOnMapV2Component {
     return "NA";
   }
 
+  /** Today distance in meters: totalDistance - lastOdometer (both in meters). */
+  getDayDistanceMeters(item: any): number {
+    const total = parseFloat(item?.position?.details?.totalDistance);
+    const last = parseFloat(item?.device?.details?.lastOdometer);
+    const totalMeters = isNaN(total) ? 0 : total;
+    const lastMeters = isNaN(last) ? 0 : last;
+    const dayMeters = totalMeters - lastMeters;
+    return dayMeters > 0 ? dayMeters : 0;
+  }
+
   updateOdometer(data: any) {
     if (data == undefined || data == null) {
       return 'N/A';
@@ -898,17 +909,16 @@ export class VehicleOnMapV2Component {
     }
   }
 
-  /** Converts day distance from meters to km for display (API returns totalDistance in meters). */
+  /** Converts meters to km for display (API totalDistance / day distance are in meters). */
   formatDayDistance(data: any): string {
     if (data == undefined || data == null) {
-      return '0';
+      return '0.00';
     }
     const meters: number = parseFloat(data);
-    if (meters === 0 || isNaN(meters)) {
-      return '0';
+    if (meters <= 0 || isNaN(meters)) {
+      return '0.00';
     }
-    const km = meters / 1000;
-    return km.toFixed(2);
+    return (meters / 1000).toFixed(2);
   }
 
   formateDateValue(date: any) {
