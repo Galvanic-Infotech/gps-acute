@@ -2,7 +2,7 @@ import { DatePipe, isPlatformBrowser } from '@angular/common';
 import { ChangeDetectorRef, Component, Inject, PLATFORM_ID } from '@angular/core';
 import * as L from 'leaflet';
 import 'leaflet.markercluster';
-import { catchError, EMPTY, filter, from, interval, map, Observable, of, Subject, Subscription, switchMap, take, takeUntil, tap, timer } from 'rxjs';
+import { catchError, filter, map, Observable, of, Subject, Subscription, switchMap, takeUntil, tap, timer } from 'rxjs';
 import { AdminDashboardService } from '../../services/admin-dashboard.service';
 import { CommonService } from 'src/app/features/shared/services/common.service';
 import { StorageService } from 'src/app/features/http-services/storage.service';
@@ -37,6 +37,8 @@ export class VehicleOnMapV2Component {
   confirmedVehicleId: string | null = null;
   private readonly CLUSTER_THRESHOLD = 150;
   private markers: L.Marker[] = [];
+  private markerIndex = new Map<string, number>();
+  private iconCache = new Map<string, L.Icon>();
   private markerClusterGroup: L.MarkerClusterGroup | null = null;
   private useClustering = false;
   private infoVehicleWindows: L.Popup[] = [];
@@ -386,122 +388,118 @@ export class VehicleOnMapV2Component {
       return;
     }
     this.syncClusteringMode();
-    const vehicleObs$ = from(this.vehilceOnMapdata);
 
-    vehicleObs$
-      .pipe(
-        switchMap((vehicle: any, index: number) => {
-          if (!vehicle || (!vehicle?.Eventdata?.Latitude && !vehicle?.Eventdata?.Longitude)) {
-            return EMPTY;
-          }
+    const fresh: L.Marker[] = [];
+    for (const vehicle of this.vehilceOnMapdata || []) {
+      if (!vehicle || (!vehicle?.Eventdata?.Latitude && !vehicle?.Eventdata?.Longitude)) {
+        continue;
+      }
 
-          const existingMarkerIndex = this.findExistingMarkerIndex(vehicle.Device.VehicleNo);
-          let previousLat: any, previousLon: any;
-          if (existingMarkerIndex !== -1) {
-            previousLat = this.markers[existingMarkerIndex].getLatLng().lat;
-            previousLon = this.markers[existingMarkerIndex].getLatLng().lng;
-          }
+      const newPosition = L.latLng(vehicle.Eventdata?.Latitude, vehicle.Eventdata?.Longitude);
+      const iconUrl = this.onCheckVehicleDevice(vehicle);
+      const existingMarkerIndex = this.findExistingMarkerIndex(vehicle?.Device?.VehicleNo);
 
-          const currentLat = vehicle.Eventdata?.Latitude;
-          const currentLon = vehicle.Eventdata?.Longitude;
+      if (existingMarkerIndex === -1) {
+        // ponytail: a brand new marker has no previous fix, so it is drawn unrotated - no canvas needed
+        const popup = L.popup();
+        fresh.push(this.createMarker(vehicle, this.iconFor(iconUrl, NaN), popup));
+        this.infoVehicleWindows.push(popup);
+        continue;
+      }
 
-          const deltaLat = currentLat - previousLat;
-          const deltaLng = currentLon - previousLon;
+      const marker: any = this.markers[existingMarkerIndex];
+      const prev = marker.getLatLng();
+      const heading =
+        Math.atan2(newPosition.lng - prev.lng, newPosition.lat - prev.lat) * (180 / Math.PI);
+      marker.setIcon(this.iconFor(iconUrl, heading));
+      marker.setLatLng(newPosition);
 
-          let heading = Math.atan2(deltaLng, deltaLat) * (180 / Math.PI);
-          const canvas = document.createElement('canvas');
-          const context: any = canvas.getContext('2d');
-          const img = new Image();
-          img.src = this.onCheckVehicleDevice(vehicle);
+      const popup: any = this.infoVehicleWindows[existingMarkerIndex];
+      if (!popup || this.clickedMarker !== marker) {
+        continue;
+      }
 
-          return new Promise((resolve) => {
-            img.onload = () => {
-              const canvasWidth = Math.max(img.width, img.height);
-              const canvasHeight = canvasWidth;
+      popup
+        .setContent(this.generateInfoWindowContent(vehicle, 'Address is Loading...'))
+        .setLatLng(newPosition);
 
-              canvas.width = canvasWidth;
-              canvas.height = canvasHeight;
+      this.getLiveAddressLocation({ Lat: newPosition.lat, Lng: newPosition.lng })
+        .pipe(
+          map((addressValue) =>
+            this.generateInfoWindowContent(vehicle, addressValue || 'Address not available')
+          ),
+          catchError(() =>
+            of(this.generateInfoWindowContent(vehicle, 'Address not available'))
+          )
+        )
+        .subscribe((content) => popup.setContent(content));
 
-              context.clearRect(0, 0, canvasWidth, canvasHeight);
-              context.translate(canvasWidth / 2, canvasHeight / 2);
-              context.rotate((heading * Math.PI) / 180);
-              context.drawImage(img, -img.width / 2, -img.height / 2, img.width, img.height);
-              context.rotate((-heading * Math.PI) / 180);
-              context.translate(-canvasWidth / 2, -canvasHeight / 2);
+      if (!marker.popupManuallyClosed) {
+        popup.openOn(this.map);
+      }
+    }
 
-              const icon = L.icon({
-                iconUrl: canvas.toDataURL(),
-                iconSize: [40, 40],
-                iconAnchor: [20, 20],
-              });
+    if (fresh.length) {
+      // ponytail: one bulk add - addTo() per marker makes markercluster rebuild the whole tree each time
+      const parent: any = this.getMarkerParentLayer();
+      if (parent.addLayers) {
+        parent.addLayers(fresh);
+      } else {
+        fresh.forEach((m) => m.addTo(parent));
+      }
+      const bounds = L.latLngBounds(fresh.map((m) => m.getLatLng()));
+      if (bounds.isValid()) {
+        this.map.fitBounds(bounds);
+      }
+    }
 
-              const newPosition = L.latLng(vehicle?.Eventdata?.Latitude, vehicle?.Eventdata?.Longitude);
-              resolve({ vehicle, icon, newPosition, existingMarkerIndex });
-            };
-          }).then((data: any) => {
-            const { vehicle, icon, newPosition, existingMarkerIndex } = data;
-            if (existingMarkerIndex !== -1) {
-              this.markers[existingMarkerIndex].setIcon(icon);
-              this.markers[existingMarkerIndex].setLatLng(newPosition);
-
-              const popup = this.infoVehicleWindows[existingMarkerIndex];
-              if (popup && this.clickedMarker === this.markers[existingMarkerIndex]) {
-                const clickedMarkerText =
-                  this.clickedMarker.vehicleNo ||
-                  this.clickedMarker.getTooltip()?.getContent();
-                const vehicleInfo = this.vehilceOnMapdata.find(
-                  (v: any) => v?.Device?.VehicleNo === clickedMarkerText
-                );
-
-                if (vehicleInfo) {
-                  const address = {
-                    Lat: vehicleInfo?.Eventdata?.Latitude,
-                    Lng: vehicleInfo?.Eventdata?.Longitude
-                  };
-
-                  const initialContent = this.generateInfoWindowContent(
-                    vehicle,
-                    'Address is Loading...',
-                  );
-                  popup.setContent(initialContent).setLatLng(newPosition);
-
-                  this.getLiveAddressLocation(address)
-                    .pipe(
-                      map((addressValue) =>
-                        this.generateInfoWindowContent(
-                          vehicle,
-                          addressValue || 'Address not available',
-                        )
-                      ),
-                      catchError(() =>
-                        of(this.generateInfoWindowContent(vehicle, 'Address not available',
-                        ))
-                      )
-                    )
-                    .subscribe((content) => popup.setContent(content));
-                  if (this.clickedMarker === this.markers[existingMarkerIndex] && !this.clickedMarker.popupManuallyClosed) {
-                    popup.openOn(this.map);
-                  }
-                }
-              }
-
-            } else {
-              const popup = L.popup();
-              this.createMarker(vehicle, index, icon, popup);
-              this.infoVehicleWindows.push(popup);
-            }
-            return Promise.resolve();
-          });
-        }),
-        switchMap(() => interval(10000).pipe(takeUntil(this.destroy$))),
-        take(1)
-      )
-      .subscribe(() => {
-        this.cdr.detectChanges();
-      });
+    this.cdr.detectChanges();
   }
 
-  createMarker(vehicle: any, index: number, icon: any, popup: L.Popup) {
+  /**
+   * Rotated marker icon, quantized to 15 degree buckets and cached, so a refresh reuses
+   * ~24 canvases per sprite instead of building one per vehicle.
+   * ponytail: the first sighting of a bucket renders unrotated for one refresh while the
+   * canvas warms; pre-warm all 24 buckets per sprite if that ever reads wrong.
+   */
+  private iconFor(iconUrl: string, heading: number): L.Icon {
+    const deg = Number.isFinite(heading)
+      ? (((Math.round(heading / 15) * 15) % 360) + 360) % 360
+      : 0;
+    const key = `${iconUrl}|${deg}`;
+    const cached = this.iconCache.get(key);
+    if (cached) {
+      return cached;
+    }
+
+    const plain = L.icon({ iconUrl, iconSize: [40, 40], iconAnchor: [20, 20] });
+    if (deg === 0) {
+      this.iconCache.set(key, plain);
+      return plain;
+    }
+
+    const img = new Image();
+    img.onload = () => {
+      const size = Math.max(img.width, img.height);
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        return;
+      }
+      context.translate(size / 2, size / 2);
+      context.rotate((deg * Math.PI) / 180);
+      context.drawImage(img, -img.width / 2, -img.height / 2);
+      this.iconCache.set(
+        key,
+        L.icon({ iconUrl: canvas.toDataURL(), iconSize: [40, 40], iconAnchor: [20, 20] })
+      );
+    };
+    img.src = iconUrl;
+    return plain;
+  }
+
+  createMarker(vehicle: any, icon: any, popup: L.Popup): L.Marker {
     const newPosition = L.latLng(
       vehicle?.Eventdata?.Latitude,
       vehicle?.Eventdata?.Longitude
@@ -511,9 +509,10 @@ export class VehicleOnMapV2Component {
       Lat: vehicle?.Eventdata?.Latitude,
       Lng: vehicle?.Eventdata?.Longitude,
     };
+    // ponytail: not added to the map here - the caller adds the whole batch in one go
     const marker: any = L.marker(newPosition, {
       icon: icon,
-    }).addTo(this.getMarkerParentLayer());
+    });
 
     marker.vehicleNo = vehicle?.Device?.VehicleNo;
 
@@ -555,18 +554,9 @@ export class VehicleOnMapV2Component {
     });
     this.addPopupListeners(popup, vehicle);
 
+    this.markerIndex.set(marker.vehicleNo, this.markers.length);
     this.markers.push(marker);
-    if (!this.useClustering) {
-      const bounds = L.latLngBounds(this.markers.map((m) => m.getLatLng()));
-      if (bounds.isValid()) {
-        this.map.fitBounds(bounds);
-      }
-    } else if (this.markers.length === this.vehilceOnMapdata?.length && this.markerClusterGroup) {
-      const bounds = this.markerClusterGroup.getBounds();
-      if (bounds.isValid()) {
-        this.map.fitBounds(bounds);
-      }
-    }
+    return marker;
   }
 
   addPopupListeners(popup: any, vehicle: any) {
@@ -593,12 +583,10 @@ export class VehicleOnMapV2Component {
   }
 
 
-  findExistingMarkerIndex(vehicleNo: string): any {
-    return this.markers.findIndex(
-      (marker: any) =>
-        marker.vehicleNo === vehicleNo ||
-        marker.getTooltip()?.getContent() === vehicleNo
-    );
+  findExistingMarkerIndex(vehicleNo: string): number {
+    // ponytail: Map lookup - the old findIndex made a refresh O(n^2) at 8k vehicles
+    const index = this.markerIndex.get(vehicleNo);
+    return index === undefined ? -1 : index;
   }
 
   getLiveAddressLocation(address: any): Observable<any> {
@@ -1329,6 +1317,7 @@ export class VehicleOnMapV2Component {
           });
 
           this.addPopupListener(popup, data);
+          this.markerIndex.set(data?.Device?.VehicleNo, this.markers.length);
           this.markers.push(newMarker);
         }
       };
@@ -1489,6 +1478,7 @@ export class VehicleOnMapV2Component {
       });
       this.markers = [];
     }
+    this.markerIndex.clear();
 
     if (this.markerClusterGroup) {
       this.markerClusterGroup.clearLayers();

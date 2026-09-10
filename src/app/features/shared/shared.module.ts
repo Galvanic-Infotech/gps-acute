@@ -3,6 +3,7 @@ import { CommonModule, DatePipe } from "@angular/common";
 import { SidebarModule } from "@solidexpert/ng-sidebar";
 import { FontAwesomeModule } from "@fortawesome/angular-fontawesome";
 import { NgSelectModule } from "@ng-select/ng-select";
+import { MoveSelectDeviceOverviewComponent } from '../admin/overview/overview-manage/components/vehicle-details/move-select-device-overview/move-select-device-overview.component';
 import { TabsModule } from "ngx-bootstrap/tabs";
 import { AlertModule } from "ngx-bootstrap/alert";
 import { CarouselComponent, CarouselModule } from "ngx-owl-carousel-o";
@@ -99,6 +100,8 @@ import { UserSwitchBreadcrumbComponent } from './components/user-switch-breadcru
 import { ShareLinkDialogComponent } from './components/share-link-dialog/share-link-dialog.component';
 @NgModule({
   declarations: [
+    // ponytail: lives under overview/ but is a modal shared by dashboard + device, so it is declared here
+    MoveSelectDeviceOverviewComponent,
     SkyLogoComponent,
     SiteHeaderComponent,
     SiteFooterComponent,
@@ -207,6 +210,7 @@ import { ShareLinkDialogComponent } from './components/share-link-dialog/share-l
   ],
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
   exports: [
+    MoveSelectDeviceOverviewComponent,
 
     SidebarModule,
     FontAwesomeModule,

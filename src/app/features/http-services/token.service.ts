@@ -201,13 +201,13 @@ export class TokenService {
             this.jwtService.removeToken();
   
             const tabs = [{
-              path: "admin/overview/admin-overview",
-              name: "OverView",
+              path: "admin/dashboard",
+              name: "DashBoard",
               active: true
             }];
             this.storageService.setItems('tabs', JSON.stringify(tabs));
             this.NotificationService.showSuccess('Login Successfully');
-            this.router.navigateByUrl('admin/overview/admin-overview');
+            this.router.navigateByUrl('admin/dashboard');
           }
 
           // Initialize the user switch root session

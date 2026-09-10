@@ -15,7 +15,17 @@ export class TabsService {
     , private router : Router) {
     this.storedTabs = this.storageService.getItems('tabs');
     if (this.storedTabs) {
-      this.tabsSubject.next(JSON.parse(this.storedTabs));
+      // ponytail: one-shot migration for tabs pinned to the removed overview page.
+      // Drop this once every session predating the removal has expired.
+      const tabs = JSON.parse(this.storedTabs).filter((tab: any) => !tab?.path?.includes('admin/overview'));
+      if (!tabs.length) {
+        tabs.push({ path: 'admin/dashboard', name: 'DashBoard', active: true });
+      }
+      if (!tabs.some((tab: any) => tab.active)) {
+        tabs[0].active = true;
+      }
+      this.storageService.setItems('tabs', JSON.stringify(tabs));
+      this.tabsSubject.next(tabs);
     }
   }
 

@@ -17,13 +17,6 @@ const routes: Routes = [
       ),
   },
   {
-    path: "overview",
-    loadChildren: () =>
-      import("./overview/overview.module").then(
-        (m) => m.OverviewModule
-      ),
-  },
-  {
     path: "customer",
     loadChildren: () =>
       import("./customer/customer.module").then(
@@ -79,6 +72,12 @@ const routes: Routes = [
       import("./plan-management/plan-management.module").then(
         (m) => m.PlanManagementModule
       ),
+  },
+  // ponytail: the overview page is gone - its old URLs (and any other stale admin link) land on the dashboard.
+  // Angular only accepts ** as a whole path, so a scoped "overview/**" does not work here.
+  {
+    path: "**",
+    redirectTo: "dashboard",
   }
 ];
 

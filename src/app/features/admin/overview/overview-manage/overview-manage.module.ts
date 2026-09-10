@@ -14,7 +14,6 @@ import { MoveComponent } from './components/vehicle-details/move/move.component'
 import { RechargeComponent } from './components/vehicle-details/recharge/recharge.component';
 import { ModifyComponent } from './components/vehicle-details/modify/modify.component';
 import { ExpireDayComponent } from './components/vehicle-details/expire-day/expire-day.component';
-import { MoveSelectDeviceOverviewComponent } from './components/vehicle-details/move-select-device-overview/move-select-device-overview.component';
 import { OuterBulkSaleComponent } from './components/vehicle-details/outer-bulk-sale/outer-bulk-sale.component';
 import { InnerBulkSaleComponent } from './components/vehicle-details/inner-bulk-sale/inner-bulk-sale.component';
 import { AllCustomerDetailOverviewComponent } from './components/all-customer-detail-overview/all-customer-detail-overview.component';
@@ -34,7 +33,6 @@ import { AllCustomerDetailOverviewComponent } from './components/all-customer-de
     RechargeComponent,
     ModifyComponent,
     ExpireDayComponent,
-    MoveSelectDeviceOverviewComponent,
     OuterBulkSaleComponent,
     InnerBulkSaleComponent,
     AllCustomerDetailOverviewComponent

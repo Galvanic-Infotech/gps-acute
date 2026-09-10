@@ -202,8 +202,8 @@ export class UserSwitchService {
       `Switched back to ${session.displayName}`
     );
 
-    // Navigate to admin overview (since switching back means going to admin context)
-    this.router.navigateByUrl('/admin/overview/admin-overview');
+    // Navigate to the admin dashboard (since switching back means going to admin context)
+    this.router.navigateByUrl('/admin/dashboard');
   }
 
   // ─── Go Back One Level ─────────────────────────────────────────

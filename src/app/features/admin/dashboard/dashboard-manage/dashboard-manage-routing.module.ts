@@ -6,6 +6,7 @@ import { AdminHistoryTrackingV2Component } from './new-dashboard-component/admin
 
 const routes: Routes = [
   // {path: 'dashboard', component: AdminDashboardComponent},
+  {path: '', pathMatch: 'full', redirectTo: 'dashboard'},
   {path: 'dashboard', component: NewAdminDashboardComponent},
   {path: 'history-tracking/:id', component: AdminHistoryTrackingV2Component},
 
