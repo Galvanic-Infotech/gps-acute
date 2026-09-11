@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, catchError, map, of, switchMap } from 'rxjs';
+import { Observable, catchError, map, of, switchMap, tap } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { ReportService } from '../../users/mis/mis-manage/services/report.service';
 
@@ -81,32 +81,37 @@ export class CommonService {
   //   );
   // }
 
-  getAddressValue(address: any): Observable<any> {
-    if (!address?.Lat || !address?.Lng) {
-      return of(null); 
-    }
-    return this.reportService.getAddressInfo2(address.Lat, address.Lng).pipe(
-      map((res: any) => {
-         const loc = res?.results[0]?.formatted_address
-        //  this.pushLocationData(address.Lat, address.Lng, loc);
-        return loc
-      }),
-      
-    );
-  }
-
-  getAddressInfoDetail(address: any): Observable<any> {
+  // baliniot cache first, ola maps only on miss (empty data / 404 / error), then cache it back
+  private resolveAddress(address: any): Observable<any> {
     if (!address?.Lat || !address?.Lng) {
       return of(null);
     }
-    return this.reportService.getAddressInfo(address.Lat, address.Lng).pipe(
-      map((res: any) => {
-         const loc = res?.results[0]?.formatted_address
-        // this.pushLocationData(address.Lat, address.Lng, loc);
-        return loc
-      }),
-      
+    const lat = address.Lat;
+    const lng = address.Lng;
+    return this.reportService.getCachedAddress(lat, lng).pipe(
+      switchMap((res: any) => {
+        if (res?.data) {
+          return of(res.data);
+        }
+        return this.reportService.getAddressInfo(lat, lng).pipe(
+          map((ola: any) => ola?.results?.[0]?.formatted_address || ''),
+          tap((loc: string) => {
+            // ponytail: fire and forget, caching failure must not block the address showing
+            if (loc) {
+              this.reportService.updateAddress(loc, lat, lng).subscribe();
+            }
+          })
+        );
+      })
     );
+  }
+
+  getAddressValue(address: any): Observable<any> {
+    return this.resolveAddress(address);
+  }
+
+  getAddressInfoDetail(address: any): Observable<any> {
+    return this.resolveAddress(address);
   }
 
   // private pushDataUrl = 'https://gpsvts.in:20005/api/PushData/PushData';

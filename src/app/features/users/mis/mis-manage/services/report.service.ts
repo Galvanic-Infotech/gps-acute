@@ -43,13 +43,26 @@ let url = `https://gpssoftware.in/web_api/api/Geocode/Geocode/123456/aisgps/${la
   }
 
   getAddressInfo(lat:any, lng:any) {
-    let url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat}%2C${lng}&api_key=I2bZLLfPzJg9v3AaOdhxB1cjFiHf2M9G6nAB8CUu`
+    let url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat}%2C${lng}&api_key=9MAk06zIPpvbF93yY24NqZar6IWCCfl3Ujqe09mN`
     return this.http.get(url)
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
 
+  // baliniot address cache: GET returns { result, data }, data '' means not cached yet
+  private geocodingUrl = 'https://api.baliniot.in/api/Geocoding';
+
+  getCachedAddress(lat: any, lng: any) {
+    return this.http.get<any>(`${this.geocodingUrl}/${lat}/${lng}`)
+      .pipe(catchError(() => of(null)));
+  }
+
+  updateAddress(address: string, latitude: number, longitude: number) {
+    return this.http.post(this.geocodingUrl, { address, latitude, longitude })
+      .pipe(catchError(() => of(null)));
+  }
+
   getAddressInfo2(lat:any, lng:any) {
-    let url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat}%2C${lng}&api_key=I2bZLLfPzJg9v3AaOdhxB1cjFiHf2M9G6nAB8CUu`
+    let url = `https://api.olamaps.io/places/v1/reverse-geocode?latlng=${lat}%2C${lng}&api_key=9MAk06zIPpvbF93yY24NqZar6IWCCfl3Ujqe09mN`
     return this.http.get(url)
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
