@@ -56,8 +56,10 @@ let url = `https://gpssoftware.in/web_api/api/Geocode/Geocode/123456/aisgps/${la
       .pipe(catchError(() => of(null)));
   }
 
+  // POST goes to /Geocoding/token: no JWT needed, and the '/token' suffix keeps
+  // HttpInterceptorsService from attaching one (and from logging the user out on a 401)
   updateAddress(address: string, latitude: number, longitude: number) {
-    return this.http.post(this.geocodingUrl, { address, latitude, longitude })
+    return this.http.post(`${this.geocodingUrl}/token`, { address, latitude, longitude })
       .pipe(catchError(() => of(null)));
   }
 

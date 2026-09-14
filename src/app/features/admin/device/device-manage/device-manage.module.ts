@@ -41,6 +41,7 @@ import { UnlinkConfirmModalComponent } from './component/device/unlink-confirm-m
 import { LinkPlanComponent } from './component/device/link-plan/link-plan.component';
 import { BulkLinkUserComponent } from './component/device/bulk-link-user/bulk-link-user.component';
 import { UpdateRechargeComponent } from './component/device/update-recharge/update-recharge.component';
+import { DeviceTypeViewComponent } from './component/device/device-type-view/device-type-view.component';
 
 
 @NgModule({
@@ -82,6 +83,7 @@ import { UpdateRechargeComponent } from './component/device/update-recharge/upda
     LinkPlanComponent,
     BulkLinkUserComponent,
     UpdateRechargeComponent,
+    DeviceTypeViewComponent,
   ],
   imports: [
     CommonModule,

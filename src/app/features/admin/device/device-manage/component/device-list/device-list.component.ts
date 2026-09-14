@@ -24,6 +24,7 @@ import { LinkPlanComponent } from '../device/link-plan/link-plan.component';
 import { BulkLinkUserComponent } from '../device/bulk-link-user/bulk-link-user.component';
 import { UpdateRechargeComponent } from '../device/update-recharge/update-recharge.component';
 import { UnlinkConfirmModalComponent } from '../device/unlink-confirm-modal/unlink-confirm-modal.component';
+import { DeviceTypeViewComponent } from '../device/device-type-view/device-type-view.component';
 import * as XLSX from 'xlsx';
 
 
@@ -205,6 +206,13 @@ export class DeviceListComponent {
         });
       }
     });
+  }
+
+  openDeviceTypes() {
+    this.bsModelRef = this.bsmodelService.show(
+      DeviceTypeViewComponent,
+      { class: "modal-md modal-dialog-centered alert-popup" }
+    );
   }
 
   getDeviceTypeName(deviceTypeId: any): string {

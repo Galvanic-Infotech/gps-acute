@@ -41,7 +41,7 @@ describe('CommonService', () => {
       .flush({ results: [{ formatted_address: 'Ola Address, Nagpur' }] });
 
     expect(result).toBe('Ola Address, Nagpur');
-    const post = httpMock.expectOne(req => req.method === 'POST' && req.url === GEOCODING_URL);
+    const post = httpMock.expectOne(req => req.method === 'POST' && req.url === `${GEOCODING_URL}/token`);
     expect(post.request.body).toEqual({ address: 'Ola Address, Nagpur', latitude: 21.1, longitude: 79.0 });
     post.flush({});
   });
@@ -56,6 +56,6 @@ describe('CommonService', () => {
       .flush({ results: [{ formatted_address: 'Fallback Address' }] });
 
     expect(result).toBe('Fallback Address');
-    httpMock.expectOne(req => req.method === 'POST' && req.url === GEOCODING_URL).flush({});
+    httpMock.expectOne(req => req.method === 'POST' && req.url === `${GEOCODING_URL}/token`).flush({});
   });
 });
