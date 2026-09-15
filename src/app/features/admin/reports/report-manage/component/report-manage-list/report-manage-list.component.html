@@ -2,7 +2,7 @@
     <div class="details-heading" *ngIf="filterType">
         <h2 class="report-heading">{{filterType +':-'}} </h2>
         <div class="p-2 bd-highlight"
-            *ngIf="filterType == 'Stop' || filterType == 'Idle' || filterType == 'Trip Report' || filterType == 'Overspeed Report' || filterType == 'Movement Summary' || filterType == 'Position Report'">
+            *ngIf="filterType == 'Stop' || filterType == 'Idle' || filterType == 'Trip Report' || filterType == 'Overspeed Report' || filterType == 'Movement Summary' || filterType == 'Position Report' || filterType == 'All Device'">
             <select [(ngModel)]="displayTableSize" (change)="onTableSizeChange($event)" class="custom-select">
                 <option *ngFor="let size of tableSizes" [value]="size">
                     {{ size }}
@@ -11,7 +11,7 @@
         </div>
         <div class="btngroup mb-2">
             <button class="button" (click)="exportToExcels()">Excel</button>
-            <button class="button button-red" (click)="exportToPDF()">PDF</button>
+            <button class="button button-red" (click)="exportToPDF()" *ngIf="filterType != 'All Device'">PDF</button>
         </div>
     </div>
     <div *ngIf="filterType == 'Distance' && vehicle" class="distance">
@@ -730,6 +730,64 @@
                 <div class="pagination-data" *ngIf="positionData && positionData.length > 0">
                     <pagination-controls id="position" previousLabel="Prev" nextLabel="Next"
                         (pageChange)="positionPage = $event">
+                    </pagination-controls>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="report-part mt-3" *ngIf="filterType == 'All Device'">
+        <div class="card mt-3">
+            <div class="card-body">
+                <div id="datatable_wrapper" class="dataTables_wrapper no-footer">
+                    <div class="dataTables_scroll">
+                        <div class="dataTables_scrollBody">
+                            <table id="datatable" #TABLE
+                                class="table table-striped nowrap dataTable no-footer dtr-inline" role="grid"
+                                style="width: 100%" width="100%">
+                                <thead>
+                                    <tr role="row">
+                                        <th>Vehicle No</th>
+                                        <th>SIM Number</th>
+                                        <th>Last Update</th>
+                                        <th>Installation Date</th>
+                                        <th>Next Recharge Date</th>
+                                        <th>Customer Recharge Date</th>
+                                        <th>Onboarded</th>
+                                        <th>Linked User Name</th>
+                                        <th>Linked User ID</th>
+                                        <th>Linked Mobile No</th>
+                                        <th>Linked User Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let row of allDeviceData | paginate : {
+                                        id: 'allDevice',
+                                        itemsPerPage: tableSize,
+                                        currentPage: page,
+                                        totalItems: count}">
+                                        <td>{{ row?.device?.vehicleNo }}</td>
+                                        <td>{{ row?.device?.simPhoneNumber }}</td>
+                                        <td>{{ row?.position?.lastUpdateOn | date: 'dd/MM/yyyy HH:mm' }}</td>
+                                        <td>{{ row?.validity?.installationOn | date: 'dd/MM/yyyy' }}</td>
+                                        <td>{{ row?.validity?.nextRechargeDate | date: 'dd/MM/yyyy' }}</td>
+                                        <td>{{ row?.validity?.customerRechargeDate | date: 'dd/MM/yyyy' }}</td>
+                                        <td>{{ row?.validity?.onBoarded | date: 'dd/MM/yyyy HH:mm' }}</td>
+                                        <td>{{ row?.user?.linkedUserName }}</td>
+                                        <td>{{ row?.user?.linkedUserId }}</td>
+                                        <td>{{ row?.user?.linkedMobileNo }}</td>
+                                        <td>{{ row?.user?.linkedUserType }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="text-center" *ngIf="!allDeviceData || allDeviceData.length === 0"
+                                style="width: 100%;">No Data Available</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="pagination-data" *ngIf="allDeviceData && allDeviceData.length > 0">
+                    <pagination-controls id="allDevice" previousLabel="Prev" nextLabel="Next"
+                        (pageChange)="onTableDataChange($event)">
                     </pagination-controls>
                 </div>
             </div>

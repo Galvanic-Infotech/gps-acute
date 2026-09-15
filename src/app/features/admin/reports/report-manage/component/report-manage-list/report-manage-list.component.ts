@@ -22,6 +22,7 @@ import {
   POSITION_REPORT_COLUMNS,
   buildPositionReportExportRows,
 } from 'src/app/features/shared/utils/position-report.util';
+import { ReportManageService } from '../../services/report-manage.service';
 
 interface VehicleData {
   VehicleNo: string;
@@ -90,12 +91,14 @@ export class ReportManageListComponent {
   distanceVsSpeedTotalDistance: number = 0;
   positionData: any[] = [];
   positionPage = 1;
+  allDeviceData: any[] = [];
 
   constructor(
     private commonService: CommonService,
     private cdr: ChangeDetectorRef,
     private modalService: BsModalService,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private reportManageService: ReportManageService
   ) {}
 
   setData(data: any, filterType: any, formvalue: any, type: any, isLocation: any) {
@@ -214,6 +217,10 @@ export class ReportManageListComponent {
       this.positionPage = 1;
       this.startAddresses = [];
       this.selectedStartIndexes = [];
+    } else if (this.filterType === 'All Device') {
+      // server-side paging: data holds one page, count is the server total
+      this.allDeviceData = data?.rows || [];
+      this.count = data?.total || 0;
     } else if (this.filterType === 'Distance vs Speed') {
       this.distanceVsSpeedData = this.vehicle || [];
       this.distanceVsSpeedTotalRecords = this.distanceVsSpeedData.reduce((sum: number, item: any) => sum + (item.totalRecords || 0), 0);
@@ -662,6 +669,26 @@ export class ReportManageListComponent {
       }
       this.positionReportExcel()
     }
+    if (this.filterType === 'All Device') {
+      if (!this.allDeviceData || this.allDeviceData.length === 0) {
+        this.notificationService.showError('No data available to export');
+        return;
+      }
+      this.allDeviceExcel()
+    }
+  }
+
+  // the API returns the whole xlsx, unpaged
+  allDeviceExcel() {
+    this.reportManageService
+      .allDeviceReportExcel()
+      .subscribe((res: any) => {
+        if (res?.status !== 200 || !res?.body) {
+          this.notificationService.showError('Failed to download report');
+          return;
+        }
+        saveAs(res.body, 'AllDeviceReport.xlsx');
+      });
   }
 
   positionRowIndex(i: number): number {

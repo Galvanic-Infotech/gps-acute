@@ -181,4 +181,5 @@ export const API_CONSTANTS: any = {
   bulkUploadSampleDownload: 'BulkUpload',
   bulkUploadNew: 'BulkUpload',
   bulkUploadStatus: 'BulkUpload/by-request-id',
+  offlineReport: 'Offline/Report',
 };

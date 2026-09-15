@@ -34,7 +34,7 @@
                     Report is required
                 </div>
             </div>
-            <div class="col-md-2" *ngIf="movementcontrol">
+            <div class="col-md-2" *ngIf="movementcontrol && !isAllDevice">
                 <label class="form-label">Vehicle</label>
                 <ng-select placeholder="Select Vehicle" formControlName="vehicledata"
                     (change)="onVehicleSelect($event)">
@@ -46,7 +46,7 @@
                     Vehicle is required
                 </div>
             </div>
-            <div class="col-md-2" *ngIf="movementcontrol">
+            <div class="col-md-2" *ngIf="movementcontrol && !isAllDevice">
                 <label class="form-label">Movement Duration</label>
                 <input type="text" placeholder="Movement Duration" class="form-control" formControlName="movement">
                 <div *ngIf="reportForm.get('movement')?.invalid && (reportForm.get('movement')?.dirty || reportForm.get('movement')?.touched)"
@@ -55,7 +55,7 @@
                     <span *ngIf="reportForm.get('movement')?.hasError('min')">Movement must be greater than 0</span>
                 </div>
             </div>
-            <div class="col-md-2" *ngIf="!movementcontrol">
+            <div class="col-md-2" *ngIf="!movementcontrol && !isAllDevice">
                 <label class="form-label">Vehicle</label>
                 <ng-select
                     [items]="vehicleData"
@@ -95,7 +95,7 @@
                 </div>
             </div>
 
-            <div class="col-md-2" *ngIf="durationcontrol">
+            <div class="col-md-2" *ngIf="durationcontrol && !isAllDevice">
                 <label class="form-label">Speed Limit</label>
                 <input type="text" placeholder="Speed Limit" class="form-control" formControlName="speed">
                 <div *ngIf="reportForm.get('speed')?.invalid && (reportForm.get('speed')?.dirty || reportForm.get('speed')?.touched)"
@@ -105,7 +105,7 @@
                 </div>
             </div>
 
-            <div class="col-md-2">
+            <div class="col-md-2" *ngIf="!isAllDevice">
                 <label for="exampleInputEmail1" class="form-label">Time Format</label>
                 <small class="text-muted d-block">Max 7 days per report</small>
                 <ng-select placeholder="Select Time Duration" formControlName="timeformat" (change)="timecheck($event)">
@@ -149,7 +149,7 @@
 
             </div>
 
-            <div class="col-md-2" *ngIf="customDate">
+            <div class="col-md-2" *ngIf="customDate && !isAllDevice">
                 <label class="form-label">From Date</label>
                 <mat-form-field>
                     <input matInput [ngxMatDatetimePicker]="reportsfrom" formControlName="fromDate">
@@ -162,7 +162,7 @@
                     From Date is required
                 </div>
             </div>
-            <div class="col-md-2" *ngIf="customDate">
+            <div class="col-md-2" *ngIf="customDate && !isAllDevice">
                 <label class="form-label">To Date</label>
                 <mat-form-field>
                     <input matInput [ngxMatDatetimePicker]="reports" formControlName="toDate">

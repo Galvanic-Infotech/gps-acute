@@ -41,6 +41,7 @@ export class ReportManageFilterComponent {
   alertTrigger: any = false;
   isLocation: boolean = false;
   movementcontrol: boolean = false;
+  isAllDevice: boolean = false;
   selectedVehicles: any[] = [];
   allowMultipleVehicles = false;
   readonly multiVehicleReportTypes = new Set([
@@ -120,6 +121,10 @@ export class ReportManageFilterComponent {
     {
       id: 13,
       title: 'Position Report',
+    },
+    {
+      id: 14,
+      title: 'All Device',
     },
   ];
   durationcontrol: any;
@@ -285,6 +290,11 @@ export class ReportManageFilterComponent {
         vehicleDataControl?.setValidators([Validators.required]);
         vehicleControl?.clearValidators();
 
+      } else if (value === 'All Device') {
+        // whole-fleet report, no vehicle/date input needed
+        movementControl?.clearValidators();
+        vehicleDataControl?.clearValidators();
+        vehicleControl?.clearValidators();
       } else {
         movementControl?.clearValidators();
         vehicleDataControl?.clearValidators();
@@ -422,7 +432,25 @@ export class ReportManageFilterComponent {
   Confirm(event: any) {
     this.page = event.pageNumber;
     this.tableSize = event.pageSize;
+    if (this.formValueData?.filtername === 'All Device') {
+      this.fetchAllDeviceReport('');
+    }
     // this.submit(this.formValueData, '');
+  }
+
+  private fetchAllDeviceReport(type: any): void {
+    this.spinnerLoading = true;
+    this.repotManageService
+      .allDeviceReport(this.page, this.tableSize)
+      .subscribe((res: any) => {
+        this.spinnerLoading = false;
+        const body = res?.body || {};
+        this.data = {
+          rows: Array.isArray(body?.data) ? body.data : [],
+          total: body?.totalCount || 0,
+        };
+        this.ReportsDetails.setData(this.data, 'All Device', null, type, false);
+      });
   }
 
   getDealerlist() {
@@ -446,6 +474,7 @@ export class ReportManageFilterComponent {
 
   onItemSelect(event: any) {
     this.durationcontrol = event === 'Overspeed Report';
+    this.isAllDevice = event === 'All Device';
     this.updateVehicleSelectMode(event);
     this.ReportsDetails.setData(this.data, '', '', '', '');
     if (
@@ -561,8 +590,15 @@ export class ReportManageFilterComponent {
       return;
     }
 
-    this.spinnerLoading = true;
     this.formValueData = formValue;
+
+    if (formValue.filtername === 'All Device') {
+      this.page = 1;
+      this.fetchAllDeviceReport(type);
+      return;
+    }
+
+    this.spinnerLoading = true;
     this.syncSelectedVehicles(this.reportForm.get('vehicle')?.value);
     let deviceData = this.selectedVehicles.map((val) => val.value);
 

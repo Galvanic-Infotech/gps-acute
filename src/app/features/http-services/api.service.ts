@@ -129,9 +129,9 @@ export class ApiService {
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
 
-  getBlob(url: any): Observable<any> {
+  getBlob(url: any, headers?: { [header: string]: string }): Observable<any> {
     return this.http
-      .get(this.setBaseSiteId(url), { responseType: 'blob', observe: 'response' })
+      .get(this.setBaseSiteId(url), { responseType: 'blob', observe: 'response', headers })
       .pipe(catchError((error: HttpErrorResponse) => of(error)));
   }
 
