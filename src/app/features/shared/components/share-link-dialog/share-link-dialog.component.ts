@@ -3,6 +3,13 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { UserService } from '../../user/services/user.service';
 import { NotificationService } from '../../../http-services/notification.service';
 
+/** API returns a path like `/track?id=KEY`; share it as `origin/#/track/KEY`. */
+export function buildTrackLink(path: string, origin: string): string {
+  const url = new URL(path, origin);
+  const key = url.searchParams.get('id') || url.pathname.split('/').filter(Boolean).pop();
+  return `${origin}/#/track/${key}`;
+}
+
 @Component({
   selector: 'app-share-link-dialog',
   templateUrl: './share-link-dialog.component.html',
@@ -42,7 +49,7 @@ export class ShareLinkDialogComponent implements OnInit {
       (res: any) => {
         const path = res?.body?.data || res?.data;
         if (path) {
-          this.shareLink = `${window.location.origin}${path}`;
+          this.shareLink = buildTrackLink(path, window.location.origin);
         } else {
           this.notificationService.showError('Failed to generate share link');
         }

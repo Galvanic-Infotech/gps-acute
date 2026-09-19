@@ -230,7 +230,8 @@ export class OpenTrackingComponent  implements OnInit, AfterViewInit, OnDestroy{
       const key = params.get('key');
       if (key) {
         this.key = key;
-        this.isNewApi = false;
+        // track/:key -> new public API, oT/:key -> legacy one
+        this.isNewApi = this.route.snapshot.routeConfig?.path?.startsWith('track') ?? false;
         this.getLocation();
         this.timer = setInterval(() => { this.getLocation(); }, 10000);
       }
