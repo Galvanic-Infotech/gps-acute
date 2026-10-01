@@ -141,7 +141,7 @@ export class DeviceDetailsComponent implements OnDestroy {
           // data: true means unique ID is duplicate
           this.isUniqueIdDuplicate = res?.body?.data === true;
           if (this.isUniqueIdDuplicate) {
-            this.deviceForm.get('deviceUid')?.setErrors({ duplicate: true });
+            this.deviceForm.get('deviceUid')?.setErrors({ ...this.deviceForm.get('deviceUid')?.errors, duplicate: true });
           } else {
             const errors = this.deviceForm.get('deviceUid')?.errors;
             if (errors) {
@@ -158,7 +158,7 @@ export class DeviceDetailsComponent implements OnDestroy {
           const errorMessage = res?.body?.data || '';
           if (errorMessage.toLowerCase().includes('duplicate')) {
             this.isUniqueIdDuplicate = true;
-            this.deviceForm.get('deviceUid')?.setErrors({ duplicate: true });
+            this.deviceForm.get('deviceUid')?.setErrors({ ...this.deviceForm.get('deviceUid')?.errors, duplicate: true });
           }
         }
       }
@@ -272,8 +272,8 @@ export class DeviceDetailsComponent implements OnDestroy {
 
   setInitialValue() {
     this.deviceForm = this.fb.group({
-      deviceUid: ['', [Validators.required]], // Unique ID - mandatory
-      deviceImei: ['', []], // Device IMEI
+      deviceUid: ['', [Validators.required, Validators.pattern('^[a-zA-Z0-9]+$')]], // Unique ID - mandatory, alphanumeric only
+      deviceImei: ['', [Validators.pattern('^[a-zA-Z0-9]*$')]], // Device IMEI - alphanumeric only
       serialNumber: ['', []], // Serial number
       fkDeviceType: [null, [Validators.required]], // Device Type - mandatory
       fkVehicleType: [null, [Validators.required]], // Vehicle Type - mandatory
@@ -384,7 +384,7 @@ export class DeviceDetailsComponent implements OnDestroy {
           // If it's a duplicate unique ID error, set form error
           if (errorMsg.toLowerCase().includes('duplicate') && errorMsg.toLowerCase().includes('unique id')) {
             this.isUniqueIdDuplicate = true;
-            this.deviceForm.get('deviceUid')?.setErrors({ duplicate: true });
+            this.deviceForm.get('deviceUid')?.setErrors({ ...this.deviceForm.get('deviceUid')?.errors, duplicate: true });
             this.deviceForm.get('deviceUid')?.markAsTouched();
           }
         } else {
@@ -402,7 +402,7 @@ export class DeviceDetailsComponent implements OnDestroy {
         // If it's a duplicate unique ID error, set form error
         if (errorMsg.toLowerCase().includes('duplicate') && errorMsg.toLowerCase().includes('unique id')) {
           this.isUniqueIdDuplicate = true;
-          this.deviceForm.get('deviceUid')?.setErrors({ duplicate: true });
+          this.deviceForm.get('deviceUid')?.setErrors({ ...this.deviceForm.get('deviceUid')?.errors, duplicate: true });
           this.deviceForm.get('deviceUid')?.markAsTouched();
         }
       }
